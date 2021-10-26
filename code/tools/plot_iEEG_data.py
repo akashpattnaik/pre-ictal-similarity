@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.collections import LineCollection
 import pandas as pd
 
-def plot_iEEG_data(data, t):
+def plot_iEEG_data(data, t, linecolor='k'):
     """"
     2021.06.23. Python 3.8
     Akash Pattnaik
@@ -57,7 +57,7 @@ def plot_iEEG_data(data, t):
     offsets = np.zeros((n_rows, 2), dtype=float)
     offsets[:, 1] = ticklocs
 
-    lines = LineCollection(segs, offsets=offsets, transOffset=None, colors='k', linewidth=0.2)
+    lines = LineCollection(segs, offsets=offsets, transOffset=None, colors=linecolor, linewidth=0.2)
     ax.add_collection(lines)
 
     # # Set the yticks to use axes coordinates on the y axis

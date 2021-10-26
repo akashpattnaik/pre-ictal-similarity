@@ -1,0 +1,12 @@
+{
+    "repositoryPath": "/mnt/local/gdrive/public/USERS/pattnaik/pre-ictal-similarity",
+    "metadataPath": "/mnt/local/gdrive/public/USERS/pattnaik/ieeg-metadata",
+    "darkColors": {
+        "1": "white",
+        "2": "#8B0000"
+    },
+    "lightColors": {
+        "1": "black",
+        "2": "#A7C7E7"
+    }
+}
