@@ -2,6 +2,9 @@ from ieeg.auth import Session
 from numpy.lib.function_base import select
 import pandas as pd
 import pickle
+from pull_patient_localization import pull_patient_localization
+from numbers import Number
+import numpy as np
 
 def get_iEEG_data(username, password, iEEG_filename, start_time_usec, stop_time_usec, select_electrodes=None, ignore_electrodes=None, outputfile=None):
     """"
@@ -57,6 +60,8 @@ def get_iEEG_data(username, password, iEEG_filename, start_time_usec, stop_time_
     # else:
     #     print("Not saving, returning data and sampling frequency")
 
+    # Pull and format metadata from patient_localization_mat
+    
     start_time_usec = int(start_time_usec)
     stop_time_usec = int(stop_time_usec)
     duration = stop_time_usec - start_time_usec
@@ -64,16 +69,47 @@ def get_iEEG_data(username, password, iEEG_filename, start_time_usec, stop_time_
     ds = s.open_dataset(iEEG_filename)
     all_channel_labels = ds.get_channel_labels()
 
-    assert(select_electrodes or ignore_electrodes)
+    assert((select_electrodes is not None) or (ignore_electrodes is not None))
 
-    if select_electrodes:
-        channel_ids = [i for i, e in enumerate(all_channel_labels) if e in select_electrodes]
-        channel_names = select_electrodes
-    if ignore_electrodes:
-        channel_ids = [i for i, e in enumerate(all_channel_labels) if e not in ignore_electrodes]
-        channel_names = [e for e in all_channel_labels if e not in ignore_electrodes]
 
-    data = ds.get_data(start_time_usec, duration, channel_ids)
+    if select_electrodes is not None:
+        if isinstance(select_electrodes[0], Number):
+            channel_ids = select_electrodes
+            channel_names = [all_channel_labels[e] for e in channel_ids]
+        elif isinstance(select_electrodes[0], str):
+            channel_ids = [i for i, e in enumerate(all_channel_labels) if e in select_electrodes]
+            channel_names = select_electrodes
+        else:
+            print("Electrodes not given as a list of ints or strings")
+
+    # if ignore_electrodes:
+    #     if isinstance(ignore_electrodes[0], int):
+    #         channel_ids = [i for i in range(len((all_channel_labels)) if i not in ignore_electrodes]
+    #         channel_names = [all_channel_labels[e] for e in channel_ids]
+    #     elif isinstance(ignore_electrodes[0], str):
+    #         channel_ids = [i for i, e in enumerate(all_channel_labels) if e not in ignore_electrodes]
+    #         channel_names = select_electrodes
+    #     else:
+    #         print("Electrodes not given as a list of ints or strings")
+
+        # channel_ids = [i for i, e in enumerate(all_channel_labels) if e not in ignore_electrodes]
+        # channel_names = [e for e in all_channel_labels if e not in ignore_electrodes]
+    try:
+        data = ds.get_data(start_time_usec, duration, channel_ids)
+    except:
+        # clip is probably too big, pull chunks and concatenate
+        clip_size = 60 * 1e6
+
+        clip_start = start_time_usec
+        data = None
+        while clip_start + clip_size < stop_time_usec:
+            if data is None:
+                data = ds.get_data(clip_start, clip_size, channel_ids)
+            else:
+                data = np.concatenate(([data, ds.get_data(clip_start, clip_size, channel_ids)]), axis=0)
+            clip_start = clip_start + clip_size
+        data = np.concatenate(([data, ds.get_data(clip_start, stop_time_usec - clip_start, channel_ids)]), axis=0)
+
     df = pd.DataFrame(data, columns=channel_names)
     fs = ds.get_time_series_details(ds.ch_labels[0]).sample_rate #get sample rate
     if outputfile:
