@@ -39,6 +39,7 @@ with open(metadata_fname) as f:
 patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
 
 PLOT = True
+DTW_FLAG = True
 
 # Make patient directories
 for index, row in patient_cohort.iterrows():
@@ -53,7 +54,7 @@ for index, row in patient_cohort.iterrows():
         os.makedirs(pt_figure_path)
 
 # %% Function for plotting dissimilarity matrices
-def plot_dissim_mat(dissim_mat, cbar_label, fig_name, title=None, cmap="BuPu"):
+def plot_dissim_mat(dissim_mat, cbar_label, fig_name, title=None, cmap="BuPu", save=True):
     fig, ax = plt.subplots()
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
@@ -81,9 +82,10 @@ def plot_dissim_mat(dissim_mat, cbar_label, fig_name, title=None, cmap="BuPu"):
     if title:
         ax.set_title(title, color=palette['1'])
 
-    plt.savefig(ospj(pt_figure_path, "{}.svg".format(fig_name)), transparent=True, bbox_inches='tight')
-    plt.savefig(ospj(pt_figure_path, "{}.png".format(fig_name)), transparent=True, bbox_inches='tight')
-    plt.close()
+    if save:
+        plt.savefig(ospj(pt_figure_path, "{}.svg".format(fig_name)), transparent=True, bbox_inches='tight')
+        plt.savefig(ospj(pt_figure_path, "{}.png".format(fig_name)), transparent=True, bbox_inches='tight')
+        plt.close()
 
     return ax
 # %% Calcualate seizure dissimilarities
@@ -104,18 +106,32 @@ for index, row in patient_cohort.iterrows():
 
     # Seizure dissimilarity
     sz_dissim_mat = np.zeros((n_sz, n_sz))
-    for i_sz in range(1, n_sz + 1):
-        for j_sz in range(1, n_sz + 1):
-            if i_sz != j_sz:
-                distance, path = fastdtw(bandpower_data[sz_id == i_sz, :], bandpower_data[sz_id == j_sz, :], dist=euclidean)
-                sz_dissim_mat[i_sz - 1, j_sz - 1] = distance
 
-    np.save(ospj(pt_data_path, "sz_dissim_mat.npy"), sz_dissim_mat)
+    if DTW_FLAG:
+        for i_sz in range(1, n_sz + 1):
+            for j_sz in range(1, n_sz + 1):
+                if i_sz != j_sz:
+                    distance, path = fastdtw(bandpower_data[sz_id == i_sz, :], bandpower_data[sz_id == j_sz, :], dist=euclidean)
+                    sz_dissim_mat[i_sz - 1, j_sz - 1] = distance
+        np.save(ospj(pt_data_path, "sz_dissim_mat_dtw.npy"), sz_dissim_mat)
+
+    else:
+        # find number of windows for each seizure
+        sz_breaks = np.array([np.size(sz_id[sz_id == i]) for i in range(1, np.max(sz_id) + 1)])
+        # take min number of windows to compare seizures
+        n_sz_windows = np.min(sz_breaks)
+
+        # collect bandpowers to perform correlation
+        corr_mat = np.zeros((n_sz, n_sz_windows*bandpower_data.shape[-1]))
+        for i_sz in range(1, n_sz + 1):
+            corr_mat[i_sz - 1, :] = np.ravel(bandpower_data[sz_id == i_sz, :][:n_sz_windows, :])
+        sz_dissim_mat = 1 - np.corrcoef(corr_mat)
+
+        np.save(ospj(pt_data_path, "sz_dissim_mat.npy"), sz_dissim_mat)
 
     if PLOT:
         plot_dissim_mat(sz_dissim_mat, "Dissimilarity", "sz_dissim_mat", "Seizure dissimilarity", cmap="BuPu")
 
-    break
 # %% time and circadian difference matrix
 for index, row in patient_cohort.iterrows():
     pt = row["Patient"]

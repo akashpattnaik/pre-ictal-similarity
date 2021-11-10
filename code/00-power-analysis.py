@@ -6,6 +6,15 @@ This script conducts a power analysis to determine the necessary sample size
 from statsmodels.stats.power import TTestIndPower
 import numpy as np
 from matplotlib import pyplot as plt
+from os.path import join as ospj
+import json
+
+# Get paths from config file and metadata
+with open("config.json") as f:
+    config = json.load(f)
+repo_path = config['repositoryPath']
+
+figure_path = ospj(repo_path, 'figures')
 
 # %%
 # parameters for power analysis
@@ -33,5 +42,9 @@ ax.set_xlabel("Number of Patients")
 ax.axhline(0.75, ls='--', color='grey')
 ax.axhline(0.85, ls='--', color='grey')
 fig.show()
+
+plt.savefig(ospj(figure_path, "power_analysis.svg"), transparent=True, bbox_inches='tight')
+plt.savefig(ospj(figure_path, "power_analysis.png"), transparent=True, bbox_inches='tight')
+plt.close()
 
 # %%

@@ -18,7 +18,14 @@ patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
 old_data_path_root = "../../hmm-emu-state-space/data"
 new_data_path_root = "../data"
 
-files = ['bandpower-windows-12hr.mat', 'bandpower-windows-sz.mat', 'target-electrodes-regions.mat']
+files = [
+    'bandpower-windows-12hr.mat', 
+    'bandpower-windows-sz.mat', 
+    'target-electrodes-regions.mat', 
+    'sz_artifact_messages.csv',
+    'pre_sz_artifact_messages.csv'
+    ]
+    
 for file in files:
     for pt in patient_cohort["Patient"]:
         print(pt)

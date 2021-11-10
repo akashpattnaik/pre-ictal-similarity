@@ -32,17 +32,17 @@ with open(metadata_fname) as f:
 
 patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
 
-PLOT = True
+PLOT = False
 # %%
 for index, row in patient_cohort.iterrows():
     pt = row["Patient"]
 
-    print(pt)
+    print(index, pt)
 
     pt_data_path = ospj(data_path, pt)
     pt_figure_path = ospj(figure_path, pt)
 
-    sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat.npy"))
+    sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat_dtw.npy"))
     time_dissim_mat = np.load(ospj(pt_data_path, "time_dissim_mat.npy"))
     circadian_dissim_mat = np.load(ospj(pt_data_path, "circadian_dissim_mat.npy"))
 
@@ -61,19 +61,21 @@ for index, row in patient_cohort.iterrows():
     corr, sig = pearsonr(sz_dissim, circadian_dissim)
     patient_cohort.at[index, 'Seizure-Circadian Correlation'] = corr
 
-    if os.path.exists(ospj(pt_data_path, "pi_dissim_mats_dtw.npy")):
-        pi_dissim_mats_dtw = np.load(ospj(pt_data_path, "pi_dissim_mats_dtw.npy"))
-        n_components = 6
+    # if os.path.exists(ospj(pt_data_path, "pi_dissim_mats_dtw.npy")):
+    #     pi_dissim_mats_dtw = np.load(ospj(pt_data_path, "pi_dissim_mats_dtw.npy"))
+    #     n_components = 6
 
-        for i_comp in range(n_components):
-            pi_dtw_dissim = pi_dissim_mats_dtw[i_comp, :, :][tri_inds]
-            corr, sig = pearsonr(sz_dissim, pi_dtw_dissim)
-            patient_cohort.at[index, 'Seizure-Preictal DTW Correlation (Subgraph {})'.format(i_comp)] = corr
+    #     for i_comp in range(n_components):
+    #         pi_dtw_dissim = pi_dissim_mats_dtw[i_comp, :, :][tri_inds]
+    #         corr, sig = pearsonr(sz_dissim, pi_dtw_dissim)
+    #         patient_cohort.at[index, 'Seizure-Preictal DTW Correlation (Subgraph {})'.format(i_comp)] = corr
 
     if os.path.exists(ospj(pt_data_path, "states_dissim_mat.npy")):
         states_dissim_mat = np.load(ospj(pt_data_path, "states_dissim_mat.npy"))
         remaining_sz_ids = np.load(ospj(pt_data_path, "remaining_sz_ids.npy"))
 
+        if np.sum(states_dissim_mat) == 0:
+            continue
         n_remaining_inds = np.size(remaining_sz_ids)
         # get upper triangular indices of square matrices where n is the number of lead seizures
         remaining_tri_inds = np.triu_indices(n_remaining_inds, k=1)
@@ -90,22 +92,28 @@ patient_cohort.to_csv(ospj(data_path, "patient_cohort_with_corr.csv"))
 # %%
 ax = sns.barplot(x='Patient', y='Seizure-States Correlation', data=patient_cohort)
 ax.set_xticklabels(patient_cohort["Patient"], rotation=90)
-plt.savefig(ospj(figure_path, "sz_state_corr.svg"), transparent=True, bbox_inches='tight')
-plt.savefig(ospj(figure_path, "sz_state_corr.png"), transparent=True, bbox_inches='tight')
-plt.close()
+
+if PLOT:
+    plt.savefig(ospj(figure_path, "sz_state_corr.svg"), transparent=True, bbox_inches='tight')
+    plt.savefig(ospj(figure_path, "sz_state_corr.png"), transparent=True, bbox_inches='tight')
+    plt.close()
 # %%
 ax = sns.barplot(x='Patient', y='Seizure-Time Correlation', data=patient_cohort)
 ax.set_xticklabels(patient_cohort["Patient"], rotation=90)
-plt.savefig(ospj(figure_path, "sz_time.svg"), transparent=True, bbox_inches='tight')
-plt.savefig(ospj(figure_path, "sz_time.png"), transparent=True, bbox_inches='tight')
-plt.close()
+
+if PLOT:
+    plt.savefig(ospj(figure_path, "sz_time.svg"), transparent=True, bbox_inches='tight')
+    plt.savefig(ospj(figure_path, "sz_time.png"), transparent=True, bbox_inches='tight')
+    plt.close()
 
 # %%
 ax = sns.barplot(x='Patient', y='Seizure-Circadian Correlation', data=patient_cohort)
 ax.set_xticklabels(patient_cohort["Patient"], rotation=90)
-plt.savefig(ospj(figure_path, "sz_circadian.svg"), transparent=True, bbox_inches='tight')
-plt.savefig(ospj(figure_path, "sz_circadian.png"), transparent=True, bbox_inches='tight')
-plt.close()
+
+if PLOT:
+    plt.savefig(ospj(figure_path, "sz_circadian.svg"), transparent=True, bbox_inches='tight')
+    plt.savefig(ospj(figure_path, "sz_circadian.png"), transparent=True, bbox_inches='tight')
+    plt.close()
 
 # %% Why does HUP 144 have the same correlation coefficient?
 
@@ -126,7 +134,8 @@ fig, ax = plt.subplots()
 ax.imshow(circadian_dissim_mat)
 
 sz_starts = pull_sz_starts(pt, metadata)
- # It's because all of the seizures happened on the same day -- time dissim mat is the same is circadian dissim mat
+# It's because all of the seizures happened on the same day -- time dissim mat is the same is circadian dissim mat
+
 # %%
 
 sig_pre_ictal = ["HUP070", "HUP111", "HUP187"]
@@ -149,3 +158,5 @@ for pt in sig_pre_ictal:
     axes.flat[1].set_title("Pre-ictal")
     axes.flat[2].set_title("Time")
     axes.flat[3].set_title("Circadian")
+
+# %%

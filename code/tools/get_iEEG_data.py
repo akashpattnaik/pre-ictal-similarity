@@ -84,9 +84,11 @@ def get_iEEG_data(username, password, iEEG_filename, start_time_usec, stop_time_
 
     # if ignore_electrodes:
     #     if isinstance(ignore_electrodes[0], int):
-    #         channel_ids = [i for i in range(len((all_channel_labels)) if i not in ignore_electrodes]
+    #         print('int')
+    #         channel_ids = [i for i in np.arange(len(all_channel_labels)) if i not in ignore_electrodes]
     #         channel_names = [all_channel_labels[e] for e in channel_ids]
     #     elif isinstance(ignore_electrodes[0], str):
+    #         print('str')
     #         channel_ids = [i for i, e in enumerate(all_channel_labels) if e not in ignore_electrodes]
     #         channel_names = select_electrodes
     #     else:

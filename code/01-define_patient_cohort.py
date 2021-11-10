@@ -38,7 +38,7 @@ metadata_table = pd.read_excel(ospj(data_path, "atlas_metadata_simplified.xlsx")
 metadata_table = metadata_table[metadata_table.filter(regex='^(?!Unnamed)').columns]
 
 # Good outcome
-criteria1 = np.floor(metadata_table['Engel_6_mo']) == 1
+criteria1 = np.floor(metadata_table['Engel_6_mo']) <= 2
 # MTL target
 criteria2 = metadata_table['Target'].str.contains(r'MTL', na=True)
 # Get and sort by number of seizures
@@ -60,7 +60,7 @@ criteria1 = np.floor(metadata_table['Engel_12_mo']) == 1
 for i_pt, pt in enumerate(metadata_table["Patient"]):
     metadata_table.at[i_pt, ["Num Seizures"]] = len(pull_sz_starts(pt, metadata))
 
-criteria2 = metadata_table["Num Seizures"] > 5
+criteria2 = metadata_table["Num Seizures"] > 4
 cohort = metadata_table[criteria1 & criteria2]
 cohort.to_excel(ospj(data_path, "patient_cohort.xlsx"), index=False)
 
