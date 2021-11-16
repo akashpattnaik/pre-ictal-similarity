@@ -5,6 +5,7 @@ from os.path import join as ospj
 import glob
 from PIL import Image
 import pandas as pd
+import os
 
 def _add_image(slide, placeholder_id, image_url):
     placeholder = slide.placeholders[placeholder_id]
@@ -53,22 +54,81 @@ patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
 prs = Presentation()
 for index, row in patient_cohort.iterrows():
     pt = row["Patient"]
+    pt = "HUP130"
+    print(pt)
+
+    pt_data_path = ospj(data_path, pt)
+    pt_figure_path = ospj(figure_path, pt)
+    if not os.path.exists(ospj(pt_figure_path, 'subgraphs_all.png')):
+        print("No subgraphs figure, skipped subject")
+        break
+
+    slide = prs.slides.add_slide(prs.slide_layouts[8])
+    _add_image(slide, 1, ospj(pt_figure_path, 'subgraphs_all.png'))
+    title_placeholder = slide.shapes.title
+    title_placeholder.text = pt
+
+    for fname in glob.glob(ospj(pt_figure_path, 'subgraph_expression_sz_*_all.png')):
+        slide = prs.slides.add_slide(prs.slide_layouts[8])
+        _add_image(slide, 1, fname)
+        title_placeholder = slide.shapes.title
+        title_placeholder.text = pt
+
+    prs.save(ospj(figure_path, 'subgraphs_and_expression_all.pptx'))
+    break
+# %% Make sz similarity
+prs = Presentation()
+for index, row in patient_cohort.iterrows():
+    pt = row["Patient"]
+    pt = "HUP130"
     print(pt)
 
     pt_data_path = ospj(data_path, pt)
     pt_figure_path = ospj(figure_path, pt)
 
     slide = prs.slides.add_slide(prs.slide_layouts[8])
-    _add_image(slide, 1, ospj(pt_figure_path, 'subgraphs.png'))
+    if not os.path.exists(ospj(pt_figure_path, 'sz_dissim_mat_all.png')):
+        print("No dissim mat fig, skipped subject")
+        break
+
+    _add_image(slide, 1, ospj(pt_figure_path, 'sz_dissim_mat_all.png'))
     title_placeholder = slide.shapes.title
     title_placeholder.text = pt
 
-    for fname in glob.glob(ospj(pt_figure_path, 'subgraph_expression_sz_*.png')):
+    prs.save(ospj(figure_path, 'sz_dissimilarities_all.pptx'))
+
+    break
+# %% Make subgraphs figure
+n_components = 6
+patient_cohort = pd.read_csv(ospj(data_path, "patient_cohort_with_soz_states.csv"))
+
+prs = Presentation()
+for index, row in patient_cohort.iterrows():
+    pt = row["Patient"]
+    pt = "HUP130"
+    print(pt)
+    if pt == "HUP073":
+        continue
+    pt_soz_state = row["SOZ Sensitive State (0-index)"]
+
+    pt_data_path = ospj(data_path, pt)
+    pt_figure_path = ospj(figure_path, pt)
+
+    for i_comp in range(n_components):
+        slide = prs.slides.add_slide(prs.slide_layouts[8])
+        _add_image(slide, 1, ospj(pt_figure_path, "soz_subgraph_{}_heatmap_all.png".format(i_comp)))
+        title_placeholder = slide.shapes.title
+        if i_comp == pt_soz_state:
+            title_placeholder.text = "{}, soz state".format(pt)
+        else:
+            title_placeholder.text = pt
+            
+    for fname in glob.glob(ospj(pt_figure_path, 'soz_expression_sz_*_all.png')):
         slide = prs.slides.add_slide(prs.slide_layouts[8])
         _add_image(slide, 1, fname)
         title_placeholder = slide.shapes.title
         title_placeholder.text = pt
 
-    prs.save(ospj(figure_path, 'subgraphs_and_expression.pptx'))
-
+    break
+prs.save(ospj(figure_path, 'subgraphs_and_soz_states_all.pptx'))
 # %%

@@ -13,21 +13,19 @@ import pandas as pd
 from scipy.io import loadmat
 from scipy.spatial.distance import euclidean
 from fastdtw import fastdtw
-
+import time
 from os.path import join as ospj
 
 sys.path.append('tools')
-
 from pull_sz_starts import pull_sz_starts
-
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # Get paths from config file and metadata
 with open("config.json") as f:
     config = json.load(f)
 repo_path = config['repositoryPath']
 metadata_path = config['metadataPath']
-palette = config['lightColors']
+DTW_FLAG = config['flags']["DTW_FLAG"]
+mode = config['mode']
 
 data_path = ospj(repo_path, 'data')
 figure_path = ospj(repo_path, 'figures')
@@ -37,9 +35,6 @@ with open(metadata_fname) as f:
     metadata = json.load(f)['PATIENTS']
 
 patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
-
-PLOT = True
-DTW_FLAG = True
 
 # Make patient directories
 for index, row in patient_cohort.iterrows():
@@ -53,69 +48,39 @@ for index, row in patient_cohort.iterrows():
     if not os.path.exists(pt_figure_path):
         os.makedirs(pt_figure_path)
 
-# %% Function for plotting dissimilarity matrices
-def plot_dissim_mat(dissim_mat, cbar_label, fig_name, title=None, cmap="BuPu", save=True):
-    fig, ax = plt.subplots()
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-
-    im = ax.imshow(dissim_mat, cmap=cmap)
-    fig.colorbar(im, cax=cax, orientation='vertical')
-    cax.set_ylabel(cbar_label, labelpad=15, color=palette['1'])
-    cax.yaxis.set_tick_params(color=palette['1'], labelcolor=palette['1'])
-
-    ax.tick_params(axis='x', colors=palette['1'], which='both')
-    ax.tick_params(axis='y', colors=palette['1'], which='both')
-
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-
-    ax.set_xticks(range(n_sz))
-    ax.set_xticklabels(np.arange(n_sz, dtype=int) + 1, rotation=90)
-    ax.set_yticks(range(n_sz))
-    ax.set_yticklabels(np.arange(n_sz, dtype=int) + 1)
-    ax.set_xlabel("Seizure", color=palette['1'])
-    ax.set_ylabel("Seizure", color=palette['1'])
-
-    if title:
-        ax.set_title(title, color=palette['1'])
-
-    if save:
-        plt.savefig(ospj(pt_figure_path, "{}.svg".format(fig_name)), transparent=True, bbox_inches='tight')
-        plt.savefig(ospj(pt_figure_path, "{}.png".format(fig_name)), transparent=True, bbox_inches='tight')
-        plt.close()
-
-    return ax
 # %% Calcualate seizure dissimilarities
 for index, row in patient_cohort.iterrows():
     pt = row["Patient"]
 
-    print(pt)
+    pt = "HUP130"
+    print("Calculating dissimilarity matrices for {}".format(pt))
 
     pt_data_path = ospj(data_path, pt)
     pt_figure_path = ospj(figure_path, pt)
 
-    bandpower_mat_data = loadmat(ospj(pt_data_path, "bandpower-windows-sz.mat"))
+    bandpower_mat_data = loadmat(ospj(pt_data_path, "bandpower-windows-sz-{}.mat".format(mode)))
     bandpower_data = 10*np.log10(bandpower_mat_data['allFeats'])
     t_sec = np.squeeze(bandpower_mat_data['entireT']) / 1e6
     sz_id = np.squeeze(bandpower_mat_data['szID'])
 
     n_sz = np.size(np.unique(sz_id))
-
     # Seizure dissimilarity
     sz_dissim_mat = np.zeros((n_sz, n_sz))
 
+    # apply dynamic time warping to each seizure
     if DTW_FLAG:
+        start_time = time.time()
         for i_sz in range(1, n_sz + 1):
             for j_sz in range(1, n_sz + 1):
                 if i_sz != j_sz:
                     distance, path = fastdtw(bandpower_data[sz_id == i_sz, :], bandpower_data[sz_id == j_sz, :], dist=euclidean)
                     sz_dissim_mat[i_sz - 1, j_sz - 1] = distance
-        np.save(ospj(pt_data_path, "sz_dissim_mat_dtw.npy"), sz_dissim_mat)
+        np.save(ospj(pt_data_path, "sz_dissim_mat_dtw_{}.npy".format(mode)), sz_dissim_mat)
+        end_time = time.time()
+        print("\tDynamic time warping took {} seconds".format(end_time - start_time))
 
     else:
+        start_time = time.time()
         # find number of windows for each seizure
         sz_breaks = np.array([np.size(sz_id[sz_id == i]) for i in range(1, np.max(sz_id) + 1)])
         # take min number of windows to compare seizures
@@ -126,35 +91,21 @@ for index, row in patient_cohort.iterrows():
         for i_sz in range(1, n_sz + 1):
             corr_mat[i_sz - 1, :] = np.ravel(bandpower_data[sz_id == i_sz, :][:n_sz_windows, :])
         sz_dissim_mat = 1 - np.corrcoef(corr_mat)
+        np.save(ospj(pt_data_path, "sz_dissim_mat_{}.npy".format(mode)), sz_dissim_mat)
+        end_time = time.time()
+        print("\tCorrelating beginning of seizure clips took {} seconds".format(end_time - start_time))
 
-        np.save(ospj(pt_data_path, "sz_dissim_mat.npy"), sz_dissim_mat)
-
-    if PLOT:
-        plot_dissim_mat(sz_dissim_mat, "Dissimilarity", "sz_dissim_mat", "Seizure dissimilarity", cmap="BuPu")
-
-# %% time and circadian difference matrix
-for index, row in patient_cohort.iterrows():
-    pt = row["Patient"]
-
-    print(pt)
-
-    pt_data_path = ospj(data_path, pt)
-    pt_figure_path = ospj(figure_path, pt)
-    
     sz_starts = pull_sz_starts(pt, metadata)
-
     # time dissimilarity
+    print("\tCalculating time dissimilarity matrix")
     time_dissim_mat = np.abs(sz_starts[:, None] - sz_starts[None, :]) / 60 / 60
-
     np.save(ospj(pt_data_path, "time_dissim_mat.npy"), time_dissim_mat)
-    if PLOT:
-        plot_dissim_mat(time_dissim_mat, "Time Difference (hrs)", "time_dissim_mat", "Temporal dissimilarity", cmap="BuPu")
 
     # circadian dissimilarity
+    print("\tCalculating circadian dissimilarity matrix")
     circadian_dissim_mat = np.abs(sz_starts[:, None] % (60 * 60 * 24) - sz_starts[None, :] % (60 * 60 * 24)) / 60 / 60
-
     np.save(ospj(pt_data_path, "circadian_dissim_mat.npy"), circadian_dissim_mat)
-    if PLOT:
-        plot_dissim_mat(circadian_dissim_mat, "Time of Day Difference (hrs)", "circadian_dissim_mat", "Circadian dissimilarity", cmap="BuPu")
 
-# %%
+    print("\tDissimilarity matrices calculated for {}".format(pt))
+
+    break

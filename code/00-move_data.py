@@ -19,16 +19,16 @@ old_data_path_root = "../../hmm-emu-state-space/data"
 new_data_path_root = "../data"
 
 files = [
-    'bandpower-windows-12hr.mat', 
-    'bandpower-windows-sz.mat', 
-    'target-electrodes-regions.mat', 
-    'sz_artifact_messages.csv',
-    'pre_sz_artifact_messages.csv'
+    'bandpower-windows-pre-sz-all.mat', 
+    'bandpower-windows-sz-all.mat',
+    'target-electrodes-regions.mat',
+    'target-electrodes-all.mat'
     ]
     
-for file in files:
-    for pt in patient_cohort["Patient"]:
-        print(pt)
+# for pt in patient_cohort["Patient"]:
+for pt in ["HUP130"]:
+    print(pt)
+    for file in files:
         # check if directory exists
         if not os.path.exists(ospj(new_data_path_root, pt)):
             os.makedirs(ospj(new_data_path_root, pt))
@@ -38,4 +38,6 @@ for file in files:
 
         if os.path.exists(old_data_path):
             shutil.copy(old_data_path, new_data_path)
+        else:
+            print("{} does not exist".format(old_data_path))
 # %%

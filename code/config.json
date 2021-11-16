@@ -8,5 +8,9 @@
     "lightColors": {
         "1": "black",
         "2": "#A7C7E7"
-    }
+    },
+    "flags": {
+        "DTW_FLAG": true
+    },
+    "mode": "all"
 }

@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import json
 import pandas as pd
 from scipy.io import loadmat
+from scipy.stats import zscore
 import numpy.ma as ma
 from os.path import join as ospj
 
@@ -73,11 +74,12 @@ del ll_data
 
 
 # %% where to cut off line length
-threshold_range = np.arange(1000, 4000, 100)
-n_meet_threshold = [t[np.where(ll > i)[0]].shape[0] for i in threshold_range]
+threshold_range = np.arange(0, 500, 10)
+n_meet_threshold = np.array([t[np.where(ll > i)[0]].shape[0] for i in threshold_range])
+percent_above_threshold = n_meet_threshold / ll.shape[0]
 
 fig, ax = plt.subplots()
-ax.plot(threshold_range, n_meet_threshold)
+ax.plot(threshold_range, percent_above_threshold)
 ax.set_xlabel("Threshold Line Length")
 ax.set_ylabel("# windows above threshold")
 
