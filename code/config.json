@@ -12,5 +12,7 @@
     "flags": {
         "DTW_FLAG": true
     },
-    "mode": "all"
+    "electrodes": "all",
+    "bands": "broad",
+    "preictal_window_min": 120 
 }

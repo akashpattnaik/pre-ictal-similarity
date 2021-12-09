@@ -6,6 +6,8 @@ import glob
 from PIL import Image
 import pandas as pd
 import os
+import numpy as np
+from os.path import join as ospj
 
 def _add_image(slide, placeholder_id, image_url):
     placeholder = slide.placeholders[placeholder_id]
@@ -44,6 +46,7 @@ with open("config.json") as f:
 repo_path = config['repositoryPath']
 metadata_path = config['metadataPath']
 palette = config['lightColors']
+mode = config['mode']
 
 data_path = ospj(repo_path, 'data')
 figure_path = ospj(repo_path, 'figures')
@@ -54,7 +57,6 @@ patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
 prs = Presentation()
 for index, row in patient_cohort.iterrows():
     pt = row["Patient"]
-    pt = "HUP130"
     print(pt)
 
     pt_data_path = ospj(data_path, pt)
@@ -75,7 +77,6 @@ for index, row in patient_cohort.iterrows():
         title_placeholder.text = pt
 
     prs.save(ospj(figure_path, 'subgraphs_and_expression_all.pptx'))
-    break
 # %% Make sz similarity
 prs = Presentation()
 for index, row in patient_cohort.iterrows():
@@ -99,21 +100,20 @@ for index, row in patient_cohort.iterrows():
 
     break
 # %% Make subgraphs figure
-n_components = 6
 patient_cohort = pd.read_csv(ospj(data_path, "patient_cohort_with_soz_states.csv"))
 
 prs = Presentation()
 for index, row in patient_cohort.iterrows():
     pt = row["Patient"]
-    pt = "HUP130"
     print(pt)
-    if pt == "HUP073":
-        continue
     pt_soz_state = row["SOZ Sensitive State (0-index)"]
 
     pt_data_path = ospj(data_path, pt)
     pt_figure_path = ospj(figure_path, pt)
 
+    n_components =  np.load(ospj(pt_data_path, "nmf_expression_{}.npy".format(mode))).shape[-1]
+
+    print(n_components)
     for i_comp in range(n_components):
         slide = prs.slides.add_slide(prs.slide_layouts[8])
         _add_image(slide, 1, ospj(pt_figure_path, "soz_subgraph_{}_heatmap_all.png".format(i_comp)))
@@ -129,6 +129,5 @@ for index, row in patient_cohort.iterrows():
         title_placeholder = slide.shapes.title
         title_placeholder.text = pt
 
-    break
 prs.save(ospj(figure_path, 'subgraphs_and_soz_states_all.pptx'))
 # %%

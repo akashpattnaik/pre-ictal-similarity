@@ -71,7 +71,6 @@ def get_iEEG_data(username, password, iEEG_filename, start_time_usec, stop_time_
 
     assert((select_electrodes is not None) or (ignore_electrodes is not None))
 
-
     if select_electrodes is not None:
         if isinstance(select_electrodes[0], Number):
             channel_ids = select_electrodes

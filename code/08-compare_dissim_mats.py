@@ -22,6 +22,8 @@ with open("config.json") as f:
 repo_path = config['repositoryPath']
 metadata_path = config['metadataPath']
 palette = config['lightColors']
+electrodes_opt = config['electrodes']
+band_opt = config['bands']
 
 data_path = ospj(repo_path, 'data')
 figure_path = ospj(repo_path, 'figures')
@@ -37,18 +39,20 @@ PLOT = False
 for index, row in patient_cohort.iterrows():
     pt = row["Patient"]
 
-    print(index, pt)
+    print("Comparing dissimilarity matrices for {}".format(pt))
 
     pt_data_path = ospj(data_path, pt)
     pt_figure_path = ospj(figure_path, pt)
 
-    sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat_dtw.npy"))
+    sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat_dtw_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
     time_dissim_mat = np.load(ospj(pt_data_path, "time_dissim_mat.npy"))
     circadian_dissim_mat = np.load(ospj(pt_data_path, "circadian_dissim_mat.npy"))
 
     assert sz_dissim_mat.shape[0] == time_dissim_mat.shape[0], "{}: sz {}, time {}".format(pt, sz_dissim_mat.shape[0], time_dissim_mat.shape[0])
     n_sz = sz_dissim_mat.shape[0]
 
+    if n_sz <= 2:
+        continue
     tri_inds = np.triu_indices(n_sz, k=1)
 
     sz_dissim = sz_dissim_mat[tri_inds]
@@ -87,6 +91,27 @@ for index, row in patient_cohort.iterrows():
         corr, sig = pearsonr(remaining_sz_dissim, states_dissim)
         patient_cohort.at[index, 'Seizure-States Correlation'] = corr
 
+
+    if os.path.exists(ospj(pt_data_path, "soz_subgraph_dissim_mat_band-{}_elec-{}.npy".format(band_opt, electrodes_opt))):
+        soz_subgraph_dissim_mat = np.load(ospj(pt_data_path, "soz_subgraph_dissim_mat_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
+        remaining_sz_ids = np.load(ospj(pt_data_path, "remaining_sz_ids.npy"))
+
+        n_remaining_inds = np.size(remaining_sz_ids)
+        # get upper triangular indices of square matrices where n is the number of lead seizures
+        remaining_tri_inds = np.triu_indices(n_remaining_inds, k=1)
+        remaining_sz_dissim_mat = sz_dissim_mat[remaining_sz_ids[:, None] - 1, remaining_sz_ids - 1]
+
+        soz_subgraph_dissim = soz_subgraph_dissim_mat[remaining_tri_inds]
+        remaining_sz_dissim = remaining_sz_dissim_mat[remaining_tri_inds]
+
+        if np.size(remaining_sz_dissim) < 2:
+            patient_cohort.at[index, 'Seizure-SOZ Subgraph Correlation'] = None
+            continue
+        
+        corr, sig = pearsonr(remaining_sz_dissim, soz_subgraph_dissim)
+        patient_cohort.at[index, 'Seizure-SOZ Subgraph Correlation'] = corr
+
+
 patient_cohort.to_csv(ospj(data_path, "patient_cohort_with_corr.csv"))
 
 # %%
@@ -117,46 +142,46 @@ if PLOT:
 
 # %% Why does HUP 144 have the same correlation coefficient?
 
-pt = "HUP144"
-pt_data_path = ospj("../data", pt)
+# pt = "HUP144"
+# pt_data_path = ospj("../data", pt)
 
-sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat.npy"))
-time_dissim_mat = np.load(ospj(pt_data_path, "time_dissim_mat.npy"))
-circadian_dissim_mat = np.load(ospj(pt_data_path, "circadian_dissim_mat.npy"))
+# sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat.npy"))
+# time_dissim_mat = np.load(ospj(pt_data_path, "time_dissim_mat.npy"))
+# circadian_dissim_mat = np.load(ospj(pt_data_path, "circadian_dissim_mat.npy"))
 
-fig, ax = plt.subplots()
-ax.imshow(sz_dissim_mat)
+# fig, ax = plt.subplots()
+# ax.imshow(sz_dissim_mat)
 
-fig, ax = plt.subplots()
-ax.imshow(time_dissim_mat)
+# fig, ax = plt.subplots()
+# ax.imshow(time_dissim_mat)
 
-fig, ax = plt.subplots()
-ax.imshow(circadian_dissim_mat)
+# fig, ax = plt.subplots()
+# ax.imshow(circadian_dissim_mat)
 
-sz_starts = pull_sz_starts(pt, metadata)
-# It's because all of the seizures happened on the same day -- time dissim mat is the same is circadian dissim mat
+# sz_starts = pull_sz_starts(pt, metadata)
+# # It's because all of the seizures happened on the same day -- time dissim mat is the same is circadian dissim mat
 
 # %%
 
-sig_pre_ictal = ["HUP070", "HUP111", "HUP187"]
-for pt in sig_pre_ictal:
-    pt_data_path = ospj("../data", pt)
+# sig_pre_ictal = ["HUP070", "HUP111", "HUP187"]
+# for pt in sig_pre_ictal:
+#     pt_data_path = ospj("../data", pt)
 
-    sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat.npy"))
-    time_dissim_mat = np.load(ospj(pt_data_path, "time_dissim_mat.npy"))
-    circadian_dissim_mat = np.load(ospj(pt_data_path, "circadian_dissim_mat.npy"))
-    pi_dissim_mat = np.load(ospj(pt_data_path, "pi_dissim_mat_60_sec.npy"))
+#     sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat.npy"))
+#     time_dissim_mat = np.load(ospj(pt_data_path, "time_dissim_mat.npy"))
+#     circadian_dissim_mat = np.load(ospj(pt_data_path, "circadian_dissim_mat.npy"))
+#     pi_dissim_mat = np.load(ospj(pt_data_path, "pi_dissim_mat_60_sec.npy"))
 
-    fig, axes = plt.subplots(nrows=2, ncols=2)
+#     fig, axes = plt.subplots(nrows=2, ncols=2)
 
-    axes.flat[0].imshow(sz_dissim_mat)
-    axes.flat[1].imshow(pi_dissim_mat)
-    axes.flat[2].imshow(time_dissim_mat)
-    axes.flat[3].imshow(circadian_dissim_mat)
+#     axes.flat[0].imshow(sz_dissim_mat)
+#     axes.flat[1].imshow(pi_dissim_mat)
+#     axes.flat[2].imshow(time_dissim_mat)
+#     axes.flat[3].imshow(circadian_dissim_mat)
 
-    axes.flat[0].set_title("Seizures")
-    axes.flat[1].set_title("Pre-ictal")
-    axes.flat[2].set_title("Time")
-    axes.flat[3].set_title("Circadian")
+#     axes.flat[0].set_title("Seizures")
+#     axes.flat[1].set_title("Pre-ictal")
+#     axes.flat[2].set_title("Time")
+#     axes.flat[3].set_title("Circadian")
 
 # %%

@@ -15,18 +15,15 @@ data_path = ospj(root_path, 'data')
 patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
 
 # %%
-old_data_path_root = "../../hmm-emu-state-space/data"
+old_data_path_root = "/gdrive/public/USERS/pattnaik/hmm-emu-state-space/data"
 new_data_path_root = "../data"
 
 files = [
-    'bandpower-windows-pre-sz-all.mat', 
-    'bandpower-windows-sz-all.mat',
     'target-electrodes-regions.mat',
     'target-electrodes-all.mat'
     ]
     
-# for pt in patient_cohort["Patient"]:
-for pt in ["HUP130"]:
+for pt in patient_cohort["Patient"]:
     print(pt)
     for file in files:
         # check if directory exists

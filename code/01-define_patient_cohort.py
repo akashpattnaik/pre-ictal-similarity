@@ -4,6 +4,11 @@ Criteria for this project is as follows:
     2) MTL target
     3) At least x recorded seizures
 
+Inputs:
+None
+
+Outputs:
+patient_cohort.xlsx
 '''
 #%%
 # Imports and environment setup
@@ -38,30 +43,79 @@ metadata_table = pd.read_excel(ospj(data_path, "atlas_metadata_simplified.xlsx")
 metadata_table = metadata_table[metadata_table.filter(regex='^(?!Unnamed)').columns]
 
 # Good outcome
-criteria1 = np.floor(metadata_table['Engel_6_mo']) <= 2
+criteria1 = np.floor(metadata_table['Engel_12_mo']) <= 1
 # MTL target
 criteria2 = metadata_table['Target'].str.contains(r'MTL', na=True)
+criteria3 = metadata_table['Target'].str.contains(r'Temporal', na=True)
 # Get and sort by number of seizures
 for i_pt, pt in enumerate(metadata_table["Patient"]):
     metadata_table.at[i_pt, ["Num Seizures"]] = len(pull_sz_starts(pt, metadata))
 metadata_table.sort_values(by='Num Seizures', axis=0, ascending=False, inplace=True)
 
-cohort = metadata_table[criteria1 & criteria2]
+cohort = metadata_table[criteria1 & (criteria2 |  criteria3)]
+
+# skip HUP99 because the electrodes file is for a different dataset than the 
+# seizure times
+cohort = cohort[cohort["Patient"] != "HUP099"]
+cohort = cohort[cohort["Patient"] != "HUP117"]
+cohort = cohort[cohort["Patient"] != "HUP165"]
+cohort['Ignore'] = False
 cohort.to_excel(ospj(data_path, "patient_cohort.xlsx"), index=False)
+
+#
+# 
+# #  %%
+# # This is the cohort with the most seizures
+# patients, labels, ignore, resect, gm_wm, coords, region, soz = pull_patient_localization(ospj(data_path, 'patient_localization_final.mat'))
+# metadata_table = pd.read_excel(ospj(data_path, "atlas_metadata_simplified.xlsx"))
+
+# metadata_table = metadata_table[metadata_table.filter(regex='^(?!Unnamed)').columns]
+# # Good outcome
+# criteria1 = np.floor(metadata_table['Engel_12_mo']) == 1
+# # Get and sort by number of seizures
+# for i_pt, pt in enumerate(metadata_table["Patient"]):
+#     metadata_table.at[i_pt, ["Num Seizures"]] = len(pull_sz_starts(pt, metadata))
+
+# criteria2 = metadata_table["Num Seizures"] > 2
+# cohort = metadata_table[criteria1 & criteria2]
+# cohort.to_excel(ospj(data_path, "patient_cohort.xlsx"), index=False)
+
+# %% Summary statistics
+therapy_val_counts = cohort["Therapy"].value_counts()
+implant_val_counts = cohort["Implant"].value_counts()
+laterality_val_counts = cohort["Laterality"].value_counts()
+lesion_val_counts = cohort["Lesion_status"].value_counts()
+
+
+mean_age = cohort["Age_surgery"].mean()
+std_age = cohort["Age_surgery"].std()
+
+n_sz = int(cohort["Num Seizures"].sum())
+min_sz = int(cohort["Num Seizures"].min())
+max_sz = int(cohort["Num Seizures"].max())
+
 # %%
-# This is the cohort with the most seizures
-patients, labels, ignore, resect, gm_wm, coords, region, soz = pull_patient_localization(ospj(data_path, 'patient_localization_final.mat'))
-metadata_table = pd.read_excel(ospj(data_path, "atlas_metadata_simplified.xlsx"))
+print(
+    '''
+    {}
+    {}
+    {}
+    {}
 
-metadata_table = metadata_table[metadata_table.filter(regex='^(?!Unnamed)').columns]
-# Good outcome
-criteria1 = np.floor(metadata_table['Engel_12_mo']) == 1
-# Get and sort by number of seizures
-for i_pt, pt in enumerate(metadata_table["Patient"]):
-    metadata_table.at[i_pt, ["Num Seizures"]] = len(pull_sz_starts(pt, metadata))
+    Mean age: {:.2f}\u00B1{:.2f}
+    Number of Seizures: {}
+    Max/min number of seizures: {}/{}
+    '''.format(
+            therapy_val_counts, 
+            implant_val_counts, 
+            laterality_val_counts, 
+            lesion_val_counts, 
+            mean_age, 
+            std_age, 
+            n_sz,
+            min_sz,
+            max_sz
+        )
 
-criteria2 = metadata_table["Num Seizures"] > 4
-cohort = metadata_table[criteria1 & criteria2]
-cohort.to_excel(ospj(data_path, "patient_cohort.xlsx"), index=False)
-
+)
 # %%

@@ -24,6 +24,8 @@ with open("config.json") as f:
 repo_path = config['repositoryPath']
 metadata_path = config['metadataPath']
 palette = config['lightColors']
+electrodes_opt = config['electrodes']
+band_opt = config['bands']
 
 data_path = ospj(repo_path, 'data')
 figure_path = ospj(repo_path, 'figures')
@@ -32,12 +34,9 @@ metadata_fname = ospj(metadata_path, "DATA_MASTER.json")
 with open(metadata_fname) as f:
     metadata = json.load(f)['PATIENTS']
 
-patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
+patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort_test.xlsx"))
 
-PLOT = True
-
-FIXED_PREICTAL_SEC = 60 * 30
-LEAD_SZ_WINDOW_SEC = (FIXED_PREICTAL_SEC + 60 * 15) # 15 min buffer
+preictal_window_min = config['preictal_window_min']
 
 # %%
 n_removed_sz = {}
@@ -51,36 +50,28 @@ for index, row in patient_cohort.iterrows():
 
     sz_starts = pull_sz_starts(pt, metadata)
 
-    bandpower_mat_data = loadmat(ospj(pt_data_path, "bandpower-windows-12hr.mat"))
-    # log transform bandpower
-    bandpower_data = 10*np.log10(bandpower_mat_data['allFeats'])
-    t_sec = np.squeeze(bandpower_mat_data['entireT']) / 1e6
-    sz_id = np.squeeze(bandpower_mat_data['szID'])
+    df = pd.read_pickle(ospj(pt_data_path, "bandpower_elec-{}_period-preictal.pkl".format(electrodes_opt)))
 
+    if band_opt == "all":
+        bandpower_data = df.filter(regex=("^((?!broad).)*$"), axis=1)
+        bandpower_data  = bandpower_data.drop(['Seizure id'], axis=1)
+    elif band_opt == "broad":
+        bandpower_data = df.filter(regex=("broad"), axis=1)
+    else:
+        sys.exit("Band configuration not given properly")
+    sz_id = np.squeeze(df['Seizure id'])
+    t_sec = np.array(df.index / np.timedelta64(1, 's'))
     n_sz = np.size(np.unique(sz_id))
-    
-    lead_sz = np.diff(np.insert(sz_starts, 0, [0])) > LEAD_SZ_WINDOW_SEC # 15 min buffer
-    
-    # which seizures are kept and which should be removed
-    remaining_sz_ids = np.where(lead_sz)[0] + 1
-    remove_sz_ids = np.where(~lead_sz)[0] + 1
+        
+    remaining_sz_ids = np.load(ospj(pt_data_path, "remaining_sz_ids.npy"))
 
-    # remove non-lead seizures
-    for remv in remove_sz_ids:
-        t_sec = np.delete(t_sec, np.where(sz_id == remv))
-        bandpower_data = np.delete(bandpower_data, np.where(sz_id == remv), axis=0)
-        sz_id = np.delete(sz_id, np.where(sz_id == remv))
-
-    pi_starts = sz_starts[lead_sz] - FIXED_PREICTAL_SEC
-    pi_ends = sz_starts[lead_sz]
-
-    pi_start_ind = [time2ind(i, t_sec) for i in pi_starts]
-    pi_end_ind = [time2ind(i, t_sec) for i in pi_ends]
-    
-    for i in range(len(pi_start_ind)):
-        ax = plot_spectrogram(bandpower_data[pi_start_ind[i]:pi_end_ind[i], :], start_time=(pi_starts[i] - pi_ends[i]) / 60, end_time=0)
+    for i in remaining_sz_ids:
+        ax = plot_spectrogram(bandpower_data[sz_id == i], start_time=(t_sec[sz_id == i][0] - t_sec[sz_id == i][-1]) / 60, end_time=0)
         ax.set_xlabel("Time from seizure onset (min)")
         ax.set_title("Seizure {}".format(remaining_sz_ids[i]))
-        plt.savefig(ospj(pt_figure_path, "pi_bandpower_spectrogram_sz_{}.svg".format(remaining_sz_ids[i])))
-        plt.savefig(ospj(pt_figure_path, "pi_bandpower_spectrogram_sz_{}.png".format(remaining_sz_ids[i])))
-        plt.close()
+        ax.set_xlim([-2, 0])
+        plt.savefig(ospj(pt_figure_path, "spectrogram_band-{}_elec-{}_sz-{}.svg".format(band_opt, electrodes_opt, remaining_sz_ids[i])))
+        plt.savefig(ospj(pt_figure_path, "spectrogram_band-{}_elec-{}_sz-{}.png".format(band_opt, electrodes_opt, remaining_sz_ids[i])))
+        # plt.close()
+
+# %%

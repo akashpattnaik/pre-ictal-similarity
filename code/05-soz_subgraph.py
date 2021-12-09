@@ -41,7 +41,8 @@ repo_path = config['repositoryPath']
 metadata_path = config['metadataPath']
 palette = config['lightColors']
 DTW_FLAG = config['flags']["DTW_FLAG"]
-mode = config['mode']
+electrodes = config['electrodes']
+bands = config['bands']
 
 data_path = ospj(repo_path, 'data')
 figure_path = ospj(repo_path, 'figures')
@@ -104,24 +105,26 @@ patients, labels, ignore, resect, gm_wm, coords, region, soz = pull_patient_loca
 # %%
 # Plot the NMF subgraphs and expression
 for index, row in patient_cohort.iterrows():
+    if row['Ignore']:
+        continue
+
     pt = row["Patient"]
-    pt = "HUP130"
     print("Calculating for {}".format(pt))
 
     pt_data_path = ospj(data_path, pt)
     pt_figure_path = ospj(figure_path, pt)
 
     remaining_sz_ids = np.load(ospj(pt_data_path, "remaining_sz_ids.npy"))
-    t_sec = np.load(ospj(pt_data_path, "lead_sz_t_sec_{}.npy".format(mode)))
-    sz_id = np.load(ospj(pt_data_path, "lead_sz_sz_id_{}.npy".format(mode)))
-    W = np.load(ospj(pt_data_path, "nmf_expression_{}.npy".format(mode)))
-    H = np.load(ospj(pt_data_path, "nmf_coefficients_{}.npy".format(mode)))
+    t_sec = np.load(ospj(pt_data_path, "lead_sz_t_sec_band-{}_elec-{}.npy".format(bands, electrodes)))
+    sz_id = np.load(ospj(pt_data_path, "lead_sz_sz_id_band-{}_elec-{}.npy".format(bands, electrodes)))
+    W = np.load(ospj(pt_data_path, "nmf_expression_band-{}_elec-{}.npy".format(bands, electrodes)))
+    H = np.load(ospj(pt_data_path, "nmf_coefficients_band-{}_elec-{}.npy".format(bands, electrodes)))
     n_components = H.shape[0]
 
     
     # pull and format electrode metadata
-    electrodes_mat = loadmat(ospj(pt_data_path, 'target-electrodes-{}.mat'.format(mode)))
-    target_electrode_region_inds = electrodes_mat['targetElectrodesRegionInds'][0] - 1
+    electrodes_mat = loadmat(ospj(pt_data_path, "selected_electrodes_elec-{}.mat".format(electrodes)))
+    target_electrode_region_inds = electrodes_mat['targetElectrodesRegionInds'][0]
     pt_index = patients.index(pt)
     sz_starts = pull_sz_starts(pt, metadata)
 
@@ -129,9 +132,11 @@ for index, row in patient_cohort.iterrows():
     # find seizure onset zone and state with most seizure onset zone
     soz_electrodes = np.array(np.squeeze(soz[pt_index][target_electrode_region_inds, :]), dtype=bool)
     pt_soz_state = soz_state(H, soz_electrodes)
+    
+    patient_cohort.at[index, 'SOZ Sensitive State'] = pt_soz_state
 
-    np.save(ospj(pt_data_path, "soz_electrodes_{}.npy".format(mode)), soz_electrodes)
-    np.save(ospj(pt_data_path, "pt_soz_state_{}.npy".format(mode)), pt_soz_state)
+    np.save(ospj(pt_data_path, "soz_electrodes_band-{}_elec-{}.npy".format(bands, electrodes)), soz_electrodes)
+    np.save(ospj(pt_data_path, "pt_soz_state_band-{}_elec-{}.npy".format(bands, electrodes)), pt_soz_state)
 
-    break
+patient_cohort.to_excel(ospj(data_path, "patient_cohort_test.xlsx"))
 # %%

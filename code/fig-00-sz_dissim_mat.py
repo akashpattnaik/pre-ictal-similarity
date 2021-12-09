@@ -1,3 +1,4 @@
+# %%
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -12,7 +13,8 @@ repo_path = config['repositoryPath']
 metadata_path = config['metadataPath']
 palette = config['lightColors']
 DTW_FLAG = config['flags']["DTW_FLAG"]
-mode = config['mode']
+electrodes_opt = config['electrodes']
+band_opt = config['bands']
 
 data_path = ospj(repo_path, 'data')
 figure_path = ospj(repo_path, 'figures')
@@ -21,7 +23,7 @@ metadata_fname = ospj(metadata_path, "DATA_MASTER.json")
 with open(metadata_fname) as f:
     metadata = json.load(f)['PATIENTS']
 
-patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
+patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort_test.xlsx"))
 
 # %% Function for plotting dissimilarity matrices
 def fig_sz_dissim_mat(dissim_mat, cbar_label, palette, title=None, cmap="BuPu", savepath=None):
@@ -62,23 +64,22 @@ def fig_sz_dissim_mat(dissim_mat, cbar_label, palette, title=None, cmap="BuPu", 
     return fig, ax
 
 # if __name__ == "__main__":
-patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
+patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort_test.xlsx"))
 mode = "all"
 
 for index, row in patient_cohort.iterrows():
     pt = row["Patient"]
-    pt = "HUP130"
     print("Making seizure and time dissimilarity figures for {}".format(pt))
 
     pt_data_path = ospj(data_path, pt)
     pt_figure_path = ospj(figure_path, pt)
 
     if DTW_FLAG:
-        sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat_dtw_{}.npy".format(mode)))
-        savepath = ospj(pt_figure_path, "sz_dissim_mat_dtw_{}".format(mode))
+        sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat_dtw_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
+        savepath = ospj(pt_figure_path, "sz_dissim_mat_dtw_band-{}_elec-{}".format(band_opt, electrodes_opt))
     else:
-        sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat_{}.npy".format(mode)))
-        savepath = ospj(pt_figure_path, "sz_dissim_mat_{}".format(mode))
+        sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
+        savepath = ospj(pt_figure_path, "sz_dissim_mat_band-{}_elec-{}".format(band_opt, electrodes_opt))
     fig_sz_dissim_mat(
         sz_dissim_mat, 
         "Dissimilarity", 
@@ -104,7 +105,7 @@ for index, row in patient_cohort.iterrows():
     circadian_dissim_mat = np.load(ospj(pt_data_path, "circadian_dissim_mat.npy"))
     savepath = ospj(pt_figure_path, "circadian_dissim_mat")
     fig_sz_dissim_mat(
-        time_dissim_mat, 
+        circadian_dissim_mat, 
         "Time of Day Difference (hrs)", 
         palette, 
         title="Circadian dissimilarity", 
@@ -113,5 +114,4 @@ for index, row in patient_cohort.iterrows():
         )
     print("\tCircadian dissimilarity figure saved at {}".format(savepath))
 
-    break
 # %%

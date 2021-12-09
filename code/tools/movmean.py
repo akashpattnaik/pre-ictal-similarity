@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.ndimage.filters import uniform_filter1d
 
-def movmean(x, k, mode="same"):
+def movmean(x, k):
     if x.ndim == 1:
         # return np.convolve(np.pad(x, (k - 1, 0), mode='edge'), np.ones(k)/k, mode='valid')
         # return np.convolve(x, np.ones(k)/k, mode=mode)

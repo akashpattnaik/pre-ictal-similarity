@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.collections import LineCollection
 import pandas as pd
 
-def plot_iEEG_data(data, t, linecolor='k'):
+def plot_iEEG_data(data, t, fig=None, ax=None, linecolor='k'):
     """"
     2021.06.23. Python 3.8
     Akash Pattnaik
@@ -22,14 +22,18 @@ def plot_iEEG_data(data, t, linecolor='k'):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     """
 
-    fig, ax = plt.subplots()
+    if fig is None and ax is None:
+        fig, ax = plt.subplots()
 
     # Show only bottom and left axis for visibility, format tick labels
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.ticklabel_format(useOffset=False)
 
-    n_rows = data.shape[1]
+    if data.ndim == 2:
+        n_rows = data.shape[1]
+    else:
+        n_rows = 1
 
     ticklocs = []
     ax.set_xlim(t[0], t[-1])

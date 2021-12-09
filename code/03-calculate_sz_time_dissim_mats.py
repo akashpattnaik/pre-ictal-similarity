@@ -1,6 +1,16 @@
 '''
 This script uses dynamic time warping and euclidean distance to crease dissimilarity matrices between pairs of seizures.
 In addition, this script creates temporal and circadian dissimilarity matrices.
+
+Inputs:
+patient_cohort.xlsx
+
+Outputs:
+sz_dissim_mat_dtw_{mode}.npy
+sz_dissim_mat_{mode}.npy
+time_dissim_mat.npy
+circadian_dissim_mat.npy
+
 '''
 # %%
 # Imports and environment setup
@@ -25,7 +35,8 @@ with open("config.json") as f:
 repo_path = config['repositoryPath']
 metadata_path = config['metadataPath']
 DTW_FLAG = config['flags']["DTW_FLAG"]
-mode = config['mode']
+electrodes_opt = config['electrodes']
+band_opt = config['bands']
 
 data_path = ospj(repo_path, 'data')
 figure_path = ospj(repo_path, 'figures')
@@ -52,30 +63,43 @@ for index, row in patient_cohort.iterrows():
 for index, row in patient_cohort.iterrows():
     pt = row["Patient"]
 
-    pt = "HUP130"
     print("Calculating dissimilarity matrices for {}".format(pt))
 
     pt_data_path = ospj(data_path, pt)
     pt_figure_path = ospj(figure_path, pt)
 
-    bandpower_mat_data = loadmat(ospj(pt_data_path, "bandpower-windows-sz-{}.mat".format(mode)))
-    bandpower_data = 10*np.log10(bandpower_mat_data['allFeats'])
-    t_sec = np.squeeze(bandpower_mat_data['entireT']) / 1e6
-    sz_id = np.squeeze(bandpower_mat_data['szID'])
+    # bandpower_mat_data = loadmat(ospj(pt_data_path, "bandpower_ictal.mat".format(mode)))
+    # bandpower_data = 10*np.log10(bandpower_mat_data['allFeats'])
+    # t_sec = np.squeeze(bandpower_mat_data['entireT']) / 1e6
+    # sz_id = np.squeeze(bandpower_mat_data['szID'])
 
+    # n_sz = np.size(np.unique(sz_id))
+    df = pd.read_pickle(ospj(pt_data_path, "bandpower_elec-{}_period-ictal.pkl".format(electrodes_opt)))
+
+    if band_opt == "all":
+        bandpower_data = df.filter(regex=("^((?!broad).)*$"), axis=1)
+        bandpower_data  = bandpower_data.drop(['Seizure id'], axis=1)
+    elif band_opt == "broad":
+        bandpower_data = df.filter(regex=("broad"), axis=1)
+    else:
+        print("Band configuration not given properly")
+        exit
+    sz_id = np.squeeze(df['Seizure id'])
+    t_sec = np.array(df.index / np.timedelta64(1, 's'))
     n_sz = np.size(np.unique(sz_id))
+
     # Seizure dissimilarity
     sz_dissim_mat = np.zeros((n_sz, n_sz))
 
     # apply dynamic time warping to each seizure
     if DTW_FLAG:
         start_time = time.time()
-        for i_sz in range(1, n_sz + 1):
-            for j_sz in range(1, n_sz + 1):
+        for i_sz in range(n_sz):
+            for j_sz in range(n_sz):
                 if i_sz != j_sz:
-                    distance, path = fastdtw(bandpower_data[sz_id == i_sz, :], bandpower_data[sz_id == j_sz, :], dist=euclidean)
-                    sz_dissim_mat[i_sz - 1, j_sz - 1] = distance
-        np.save(ospj(pt_data_path, "sz_dissim_mat_dtw_{}.npy".format(mode)), sz_dissim_mat)
+                    distance, path = fastdtw(bandpower_data[sz_id == i_sz], bandpower_data[sz_id == j_sz], dist=euclidean)
+                    sz_dissim_mat[i_sz, j_sz] = distance
+        np.save(ospj(pt_data_path, "sz_dissim_mat_dtw_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)), sz_dissim_mat)
         end_time = time.time()
         print("\tDynamic time warping took {} seconds".format(end_time - start_time))
 
@@ -91,7 +115,7 @@ for index, row in patient_cohort.iterrows():
         for i_sz in range(1, n_sz + 1):
             corr_mat[i_sz - 1, :] = np.ravel(bandpower_data[sz_id == i_sz, :][:n_sz_windows, :])
         sz_dissim_mat = 1 - np.corrcoef(corr_mat)
-        np.save(ospj(pt_data_path, "sz_dissim_mat_{}.npy".format(mode)), sz_dissim_mat)
+        np.save(ospj(pt_data_path, "sz_dissim_mat_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)), sz_dissim_mat)
         end_time = time.time()
         print("\tCorrelating beginning of seizure clips took {} seconds".format(end_time - start_time))
 
@@ -108,4 +132,4 @@ for index, row in patient_cohort.iterrows():
 
     print("\tDissimilarity matrices calculated for {}".format(pt))
 
-    break
+# %%

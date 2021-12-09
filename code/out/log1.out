@@ -1,0 +1,414 @@
+Calculating pre-ictal NMF for HUP068
+	removing seizures []
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 1950.9999339580536 seconds
+	6 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP070
+	removing seizures [2 3 6 8]
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 743.5232667922974 seconds
+	7 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP073
+	removing seizures [4 5]
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 799.4304051399231 seconds
+	6 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP074
+	removing seizures []
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 2465.3488352298737 seconds
+	7 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP082
+	removing seizures []
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 2162.5186307430267 seconds
+	8 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP083
+	removing seizures [4]
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 3893.4132759571075 seconds
+	8 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP097
+	removing seizures [3 4 5 6]
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 1572.3759467601776 seconds
+	6 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP107
+	removing seizures []
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 3179.9650552272797 seconds
+	7 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP111
+	removing seizures [ 4  8 11 12 15]
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 4092.1329488754272 seconds
+	6 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP130
+	removing seizures []
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 1993.8042063713074 seconds
+	6 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP144
+	removing seizures [4]
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 1459.895039319992 seconds
+	6 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP148
+	removing seizures []
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 1970.3349454402924 seconds
+	7 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP150
+	removing seizures [3]
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 712.2886674404144 seconds
+	7 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP157
+	removing seizures []
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 1676.27130651474 seconds
+	7 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP172
+	removing seizures []
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 1508.823422908783 seconds
+	7 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP173
+	removing seizures []
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 1603.2239048480988 seconds
+	7 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP180
+	removing seizures [6 7]
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 1769.8538517951965 seconds
+	6 components was found as optimal, rerunning for final iteration
+Calculating pre-ictal NMF for HUP187
+	removing seizures [10]
+	running NMF
+		Testing NMF with 2 components
+		Testing NMF with 3 components
+		Testing NMF with 4 components
+		Testing NMF with 5 components
+		Testing NMF with 6 components
+		Testing NMF with 7 components
+		Testing NMF with 8 components
+		Testing NMF with 9 components
+		Testing NMF with 10 components
+		Testing NMF with 11 components
+		Testing NMF with 12 components
+		Testing NMF with 13 components
+		Testing NMF with 14 components
+		Testing NMF with 15 components
+		Testing NMF with 16 components
+		Testing NMF with 17 components
+		Testing NMF with 18 components
+		Testing NMF with 19 components
+	NMF took 4566.82704949379 seconds
+	6 components was found as optimal, rerunning for final iteration
