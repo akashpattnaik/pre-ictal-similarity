@@ -68,10 +68,9 @@ for index, row in patient_cohort.iterrows():
     for i in remaining_sz_ids:
         ax = plot_spectrogram(bandpower_data[sz_id == i], start_time=(t_sec[sz_id == i][0] - t_sec[sz_id == i][-1]) / 60, end_time=0)
         ax.set_xlabel("Time from seizure onset (min)")
-        ax.set_title("Seizure {}".format(remaining_sz_ids[i]))
-        ax.set_xlim([-2, 0])
-        plt.savefig(ospj(pt_figure_path, "spectrogram_band-{}_elec-{}_sz-{}.svg".format(band_opt, electrodes_opt, remaining_sz_ids[i])))
-        plt.savefig(ospj(pt_figure_path, "spectrogram_band-{}_elec-{}_sz-{}.png".format(band_opt, electrodes_opt, remaining_sz_ids[i])))
-        # plt.close()
+        ax.set_title("Seizure {}".format(i))
+        plt.savefig(ospj(pt_figure_path, "spectrogram_band-{}_elec-{}_sz-{}.svg".format(band_opt, electrodes_opt, i)), transparent=True)
+        plt.savefig(ospj(pt_figure_path, "spectrogram_band-{}_elec-{}_sz-{}.png".format(band_opt, electrodes_opt, i)), transparent=True)
+        plt.close()
 
 # %%

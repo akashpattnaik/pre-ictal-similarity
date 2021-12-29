@@ -92,5 +92,6 @@ for index, row in patient_cohort.iterrows():
     ax.xaxis.set_minor_locator(ticker.MultipleLocator(0.5))
 
     plt.savefig(ospj(pt_figure_path, "sz_time_number_line.svg"), transparent=True)
+    plt.savefig(ospj(pt_figure_path, "sz_time_number_line.png"), transparent=True)
     plt.close()
 # %%

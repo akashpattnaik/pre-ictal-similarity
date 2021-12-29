@@ -34,7 +34,7 @@ with open(metadata_fname) as f:
 
 patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
 
-PLOT = False
+PLOT = True
 # %%
 for index, row in patient_cohort.iterrows():
     pt = row["Patient"]
@@ -115,12 +115,12 @@ for index, row in patient_cohort.iterrows():
 patient_cohort.to_csv(ospj(data_path, "patient_cohort_with_corr.csv"))
 
 # %%
-ax = sns.barplot(x='Patient', y='Seizure-States Correlation', data=patient_cohort)
+ax = sns.barplot(x='Patient', y='Seizure-SOZ Subgraph Correlation', data=patient_cohort)
 ax.set_xticklabels(patient_cohort["Patient"], rotation=90)
 
 if PLOT:
-    plt.savefig(ospj(figure_path, "sz_state_corr.svg"), transparent=True, bbox_inches='tight')
-    plt.savefig(ospj(figure_path, "sz_state_corr.png"), transparent=True, bbox_inches='tight')
+    plt.savefig(ospj(figure_path, "sz_soz_corr.svg"), transparent=True, bbox_inches='tight')
+    plt.savefig(ospj(figure_path, "sz_soz_corr.png"), transparent=True, bbox_inches='tight')
     plt.close()
 # %%
 ax = sns.barplot(x='Patient', y='Seizure-Time Correlation', data=patient_cohort)

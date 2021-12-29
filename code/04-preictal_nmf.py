@@ -70,7 +70,8 @@ patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
 SAVE_PLOT = True
 
 NMF_OPT_FLAG = True
-FIXED_PREICTAL_SEC = 60 * 30
+SUBJ_LEVEL = False
+FIXED_PREICTAL_SEC = 60 * config['preictal_window_min']
 LEAD_SZ_WINDOW_SEC = (FIXED_PREICTAL_SEC + 60 * 15) # 15 min buffer
 
 # %%
@@ -132,32 +133,32 @@ for index, row in patient_cohort.iterrows():
     n_remaining_sz = np.size(remaining_sz_ids)
     n_components = range(2, 20)
 
-    if NMF_OPT_FLAG:
-        print("\trunning NMF")
+    for sz_idx in tqdm(range(n_remaining_sz)):
+        i_sz = remaining_sz_ids[sz_idx]
+
+        data = bandpower_data[sz_id == i_sz]
+        # print("\trunning NMF")
         start_time = time.time()
         reconstruction_err = np.zeros(np.size(n_components))
         for ind, i_components in enumerate(n_components):
-            print("\t\tTesting NMF with {} components".format(i_components))
+            # print("\t\tTesting NMF with {} components".format(i_components))
             model = NMF(n_components=i_components, init='nndsvd', random_state=0, max_iter=1000)
-            W = model.fit_transform(bandpower_data - np.min(bandpower_data))
+            W = model.fit_transform(data - np.min(data))
             reconstruction_err[ind] = model.reconstruction_err_
         end_time = time.time()
-        print("\tNMF took {} seconds".format(end_time - start_time))
+        # print("\tNMF took {} seconds".format(end_time - start_time))
 
         kneedle = KneeLocator(n_components, reconstruction_err, curve="convex", direction="decreasing")
         n_opt_components = kneedle.knee
 
-        print("\t{} components was found as optimal, rerunning for final iteration".format(n_opt_components))
-    else:
-        print("\tusing predefined number of components for NMF")
-        n_opt_components = 6
+        # print("\t{} components was found as optimal, rerunning for final iteration".format(n_opt_components))
 
-    model = NMF(n_components=n_opt_components, init='nndsvd', random_state=0, max_iter=1000)
-    W = model.fit_transform(bandpower_data - np.min(bandpower_data))
-    H = model.components_
+        model = NMF(n_components=n_opt_components, init='nndsvd', random_state=0, max_iter=1000)
+        W = model.fit_transform(data - np.min(data))
+        H = model.components_
 
-    np.save(ospj(pt_data_path, "nmf_expression_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)), W)
-    np.save(ospj(pt_data_path, "nmf_coefficients_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)), H)
+        np.save(ospj(pt_data_path, "nmf_expression_band-{}_elec-{}_sz-{}.npy".format(band_opt, electrodes_opt, i_sz)), W)
+        np.save(ospj(pt_data_path, "nmf_components_band-{}_elec-{}_sz-{}.npy".format(band_opt, electrodes_opt, i_sz)), H)
     np.save(ospj(pt_data_path, "lead_sz_t_sec_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)), t_sec)
     np.save(ospj(pt_data_path, "lead_sz_sz_id_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)), sz_id)
 

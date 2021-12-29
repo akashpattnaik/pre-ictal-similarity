@@ -13,6 +13,6 @@
         "DTW_FLAG": true
     },
     "electrodes": "all",
-    "bands": "broad",
-    "preictal_window_min": 120 
+    "bands": "all",
+    "preictal_window_min": 30 
 }

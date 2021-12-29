@@ -3,6 +3,9 @@ import json
 from os.path import join as ospj
 import pandas as pd
 import numpy as np
+
+pd.set_option('display.max_rows', None)
+
 # %%
 # Get paths from config file and metadata
 with open("config.json") as f:
@@ -49,7 +52,7 @@ for pt in cohort['Patient']:
         df_list_sz_num.append(sz_id)
         df_list_sz_type.append(pt_sz_type)
 
-        if pt_sz_type in ["FIAS", "FAS", "Subclinical", "Nocturnal"]:
+        if pt_sz_type in ["FIAS", "FAS"]:
             pt_sz_category = "Focal"
         elif pt_sz_type in ["FBTC", "FBT"]:
             pt_sz_category = "FBTCS"
@@ -92,7 +95,7 @@ df = pd.DataFrame(
     }
 )
 df['Seizure duration'] = df['Seizure end'] - df['Seizure UEO']
-display(df)
+# display(df)
 print(df['Seizure category'].value_counts())
 
 # %% Check outlier durations
@@ -103,8 +106,8 @@ df_patient_types
 # %%
 df_patient_types[(df_patient_types["FBTCS"] > 1) & (df_patient_types["Focal"] > 1)]
 n_fbtcs_focal = (df_patient_types["FBTCS"] * df_patient_types["Focal"]).sum()
-n_focal_focal = (df_patient_types["Focal"] * (df_patient_types["Focal"] - 1)).sum()
-n_ftbcs_fbtcs = (df_patient_types["FBTCS"] * (df_patient_types["FBTCS"] - 1)).sum()
+n_focal_focal = (df_patient_types["Focal"] * (df_patient_types["Focal"] - 1)).sum() / 2
+n_ftbcs_fbtcs = (df_patient_types["FBTCS"] * (df_patient_types["FBTCS"] - 1)).sum() / 2
 # %%
 print(
     '''

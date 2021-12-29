@@ -46,7 +46,9 @@ with open("config.json") as f:
 repo_path = config['repositoryPath']
 metadata_path = config['metadataPath']
 palette = config['lightColors']
-mode = config['mode']
+electrodes_opt = config['electrodes']
+band_opt = config['bands']
+band_opt = "all"
 
 data_path = ospj(repo_path, 'data')
 figure_path = ospj(repo_path, 'figures')
@@ -130,4 +132,28 @@ for index, row in patient_cohort.iterrows():
         title_placeholder.text = pt
 
 prs.save(ospj(figure_path, 'subgraphs_and_soz_states_all.pptx'))
+# %%
+seizure_metadata = pd.read_excel(ospj(data_path, "seizure_metadata_with_soz_subgraph.xlsx"))
+
+# remove "other" rows
+seizure_metadata = seizure_metadata[seizure_metadata['Seizure category'] != "Other"]
+seizure_metadata = seizure_metadata.dropna().reset_index(drop=True)
+
+prs = Presentation()
+for index, row in seizure_metadata.iterrows():
+    pt = row['Patient']
+    sz_num = row['Seizure number']
+    sz_category = row['Seizure category']
+    pt_soz_component = row['SOZ Sensitive State (mann-whitney)']
+    pt_soz_component = int(pt_soz_component)
+
+    pt_figure_path = ospj(figure_path, pt)
+
+    fname = "soz_heatmap_band-{}_elec-{}_sz-{}_subgraph-{}.png".format(band_opt, electrodes_opt, sz_num, pt_soz_component)
+    slide = prs.slides.add_slide(prs.slide_layouts[8])
+    _add_image(slide, 1, ospj(pt_figure_path, fname))
+    title_placeholder = slide.shapes.title
+    title_placeholder.text = "{}, Seizure {}, Component {}, {}".format(pt, sz_num, pt_soz_component, sz_category)
+prs.save(ospj(figure_path, 'soz_component_heatmap.pptx'))
+
 # %%

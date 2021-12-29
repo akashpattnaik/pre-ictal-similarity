@@ -80,7 +80,7 @@ for patient in patients:
         # Take first electrode in each region
         df_filtered = df_filtered.groupby("region").first()
     # Remove white matter and non-localized electrodes
-    df_filtered = df_filtered[df_filtered['gm_wm'] != 1]
+    df_filtered = df_filtered[df_filtered['gm_wm'] != -1]
     # Sort rows in alphabetical order by electrode name, easier to read with iEEG.org
     df_filtered.sort_values(by=['labels'], inplace=True)
 

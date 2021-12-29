@@ -28,15 +28,21 @@ metadata_fname = ospj(metadata_path, "DATA_MASTER.json")
 with open(metadata_fname) as f:
     metadata = json.load(f)['PATIENTS']
 
-patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort_test.xlsx"))
+patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
+seizure_metadata = pd.read_excel(ospj(data_path, "seizure_metadata_with_soz_subgraph.xlsx"))
+
+# remove "other" rows
+seizure_metadata = seizure_metadata[seizure_metadata['Seizure category'] != "Other"]
+seizure_metadata = seizure_metadata.dropna().reset_index(drop=True)
 
 # %%
 
-for index, row in patient_cohort.iterrows():
-    if row['Ignore']:
-        continue
-
+for index, row in seizure_metadata.iterrows():
     pt = row["Patient"]
+    sz_num = row['Seizure number']
+    pt_soz_component = row['SOZ Sensitive State (mann-whitney)']
+    pt_soz_component = int(pt_soz_component)
+
     print("Making soz subgraph figures for {}".format(pt))
     pt_data_path = ospj(data_path, pt)
     pt_figure_path = ospj(figure_path, pt)
@@ -44,14 +50,13 @@ for index, row in patient_cohort.iterrows():
     remaining_sz_ids = np.load(ospj(pt_data_path, "remaining_sz_ids.npy"))
     t_sec = np.load(ospj(pt_data_path, "lead_sz_t_sec_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
     sz_id = np.load(ospj(pt_data_path, "lead_sz_sz_id_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
-    W = np.load(ospj(pt_data_path, "nmf_expression_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
-    H = np.load(ospj(pt_data_path, "nmf_coefficients_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
+    W = np.load(ospj(pt_data_path, "nmf_expression_band-{}_elec-{}_sz-{}.npy".format(band_opt, electrodes_opt, sz_num)))
+    H = np.load(ospj(pt_data_path, "nmf_components_band-{}_elec-{}_sz_{}.npy".format(band_opt, electrodes_opt, sz_num)))
 
     sz_id = np.squeeze(sz_id)
-    soz_electrodes = np.load(ospj(pt_data_path, "soz_electrodes_{}_{}.npy".format(electrodes_opt, band_opt)))
-    pt_soz_state = np.load(ospj(pt_data_path, "pt_soz_state_{}_{}.npy".format(electrodes_opt, band_opt)))
+    soz_electrodes = np.load(ospj(pt_data_path,  "soz_electrodes_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
 
-    print("\tPatient's seizure onset state is {}".format(pt_soz_state))
+    print("\tPatient's seizure onset state is {}".format(pt_soz_component))
     
 
     n_components = H.shape[0]
@@ -81,7 +86,7 @@ for index, row in patient_cohort.iterrows():
             origin='lower')
 
         ax.axvline(n_non_soz - 0.5, c='r', lw=2)
-        ax.set_title("Subgraph {}, {}".format(i_comp, pt))
+        ax.set_title("{} Seizure {} Subgraph {}".format(pt, sz_num, i_comp))
         
         ax.set_yticks(np.arange(n_bands))
         if band_opt == 'all':
@@ -99,26 +104,23 @@ for index, row in patient_cohort.iterrows():
         cbar = fig.colorbar(im, cax=cax, orientation='vertical')
         cbar.ax.set_ylabel('Power (dB)', rotation=90)
 
-        plt.savefig(ospj(pt_figure_path, "soz_heatmap_band-{}_elec-{}_subgraph-{}.svg".format(band_opt, electrodes_opt, i_comp)), bbox_inches='tight', transparent='true')
-        plt.savefig(ospj(pt_figure_path, "soz_heatmap_band-{}_elec-{}_subgraph-{}.png".format(band_opt, electrodes_opt, i_comp)), bbox_inches='tight', transparent='true')
-        # plt.close(fig)
+        plt.savefig(ospj(pt_figure_path, "soz_heatmap_band-{}_elec-{}_sz-{}_subgraph-{}.svg".format(band_opt, electrodes_opt, sz_num, i_comp)), bbox_inches='tight', transparent='true')
+        plt.savefig(ospj(pt_figure_path, "soz_heatmap_band-{}_elec-{}_sz-{}_subgraph-{}.png".format(band_opt, electrodes_opt, sz_num, i_comp)), bbox_inches='tight', transparent='true')
+        plt.close(fig)
 
-    for i in remaining_sz_ids:
-        k = 100
-        fig, ax = plt.subplots()
-        t_arr_min = (t_sec[sz_id == i] - t_sec[sz_id == i][-1]) / 60
-        W_norm = normalize(W, norm='l1')
-        ax.plot(t_arr_min, movmean(W_norm[sz_id == i, pt_soz_state].T, k=k).T)
+    k = 100
+    fig, ax = plt.subplots()
+    t_arr_min = (t_sec[sz_id == sz_num] - t_sec[sz_id == sz_num][-1]) / 60
+    W_norm = normalize(W, norm='l1')
+    ax.plot(t_arr_min, movmean(W_norm[:, pt_soz_component].T, k=k).T)
 
-        ax.set_xlabel("Time from seizure onset (min)")
-        ax.set_ylabel("Subgraph coefficient")
-        ax.set_title("Seizure {}".format(i))
-        # ax.set_xlim([-200, 0])
+    ax.set_xlabel("Time from seizure onset (min)")
+    ax.set_ylabel("Subgraph coefficient")
+    ax.set_title("{} Seizure {}".format(pt, sz_num))
 
-        plt.savefig(ospj(pt_figure_path, "soz_expression_band-{}_elec-{}_sz-{}_k-{}.svg".format(band_opt, electrodes_opt, i, k)), bbox_inches='tight', transparent='true')
-        plt.savefig(ospj(pt_figure_path, "soz_expression_band-{}_elec-{}_sz-{}_k-{}.png".format(band_opt, electrodes_opt, i, k)), bbox_inches='tight', transparent='true')
-        # plt.close(fig)
-
+    plt.savefig(ospj(pt_figure_path, "soz_expression_band-{}_elec-{}_sz-{}_k-{}.svg".format(band_opt, electrodes_opt, sz_num, k)), bbox_inches='tight', transparent='true')
+    plt.savefig(ospj(pt_figure_path, "soz_expression_band-{}_elec-{}_sz-{}_k-{}.png".format(band_opt, electrodes_opt, sz_num, k)), bbox_inches='tight', transparent='true')
+    plt.close(fig)
 
 # patient_cohort.to_csv(ospj(data_path, "patient_cohort_with_soz_states.csv"))
 

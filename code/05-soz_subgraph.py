@@ -5,6 +5,7 @@
 import numpy as np
 import sys
 import os
+from numpy.core.fromnumeric import sort
 import pandas as pd
 import json
 from scipy.io import loadmat
@@ -14,8 +15,11 @@ from os.path import join as ospj
 from scipy.stats import zscore
 import time
 from kneed import KneeLocator
+from scipy.stats import mannwhitneyu
 
-sys.path.append('tools')
+code_path = os.path.dirname(os.path.realpath(__file__))
+
+sys.path.append(ospj(code_path, 'tools'))
 
 from plot_spectrogram import plot_spectrogram
 from movmean import movmean
@@ -35,7 +39,7 @@ from sklearn.exceptions import ConvergenceWarning
 warnings.filterwarnings(action='ignore', category=ConvergenceWarning)
 
 # Get paths from config file and metadata
-with open("config.json") as f:
+with open(ospj(code_path, "config.json")) as f:
     config = json.load(f)
 repo_path = config['repositoryPath']
 metadata_path = config['metadataPath']
@@ -51,8 +55,7 @@ metadata_fname = ospj(metadata_path, "DATA_MASTER.json")
 with open(metadata_fname) as f:
     metadata = json.load(f)['PATIENTS']
 
-patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
-
+seizure_metadata = pd.read_excel(ospj(data_path, "seizure_metadata.xlsx"))
 # flags
 SAVE_PLOT = True
 
@@ -83,8 +86,9 @@ def soz_state(H, soz_electrodes, metric="max_all", is_zscore=False):
     n_soz = np.sum(soz_electrodes)
     n_non_soz = n_electrodes - n_soz
 
-
     n_iter = 10000
+
+    u_stats = np.zeros(n_components)
     null_z = np.zeros(n_components)
 
     for i_comp in range(n_components):
@@ -97,46 +101,65 @@ def soz_state(H, soz_electrodes, metric="max_all", is_zscore=False):
         # calculate z_score of true soz and save
         null_z[i_comp] = zscore(means)[-1]
 
-    return np.argmax(np.abs(null_z))
+
+        sz_u_stats = np.zeros(component_arr.shape[1])
+        for i in range(component_arr.shape[1]):
+            stat, p = mannwhitneyu(component_arr[i_comp][i, soz_electrodes], component_arr[i_comp][i, ~soz_electrodes])
+            sz_u_stats[i] = stat
+        u_stats[i_comp] = np.max(sz_u_stats)
+
+    pt_soz_state_resamp = np.argmax(np.abs(null_z))
+    pt_soz_state_u = np.argmax(u_stats)
+
+    pct_non_zero = np.sum(component_arr[pt_soz_state_u,:,:] == 0) / np.size(component_arr[pt_soz_state_u,:,:])
+    var = np.max(np.var(component_arr[pt_soz_state_u,:,:], axis=1))
+    return pt_soz_state_resamp, pt_soz_state_u, pct_non_zero, var
 
 patient_localization_mat = loadmat(ospj(metadata_path, 'patient_localization_final.mat'))['patient_localization']
 patients, labels, ignore, resect, gm_wm, coords, region, soz = pull_patient_localization(ospj(metadata_path, 'patient_localization_final.mat'))
 
 # %%
 # Plot the NMF subgraphs and expression
-for index, row in patient_cohort.iterrows():
-    if row['Ignore']:
-        continue
+for index, row in seizure_metadata.iterrows():
+# for index, row in patient_cohort.iterrows():
+#     if row['Ignore']:
+#         continue
 
     pt = row["Patient"]
-    print("Calculating for {}".format(pt))
-
     pt_data_path = ospj(data_path, pt)
-    pt_figure_path = ospj(figure_path, pt)
 
+    sz_num = row["Seizure number"]
     remaining_sz_ids = np.load(ospj(pt_data_path, "remaining_sz_ids.npy"))
+    if sz_num not in remaining_sz_ids:
+        continue
+    if row["Seizure category"] == "Other":
+        continue
+
+    print("Calculating dissimilarity for seizure {}, {}".format(sz_num, pt))
+
     t_sec = np.load(ospj(pt_data_path, "lead_sz_t_sec_band-{}_elec-{}.npy".format(bands, electrodes)))
     sz_id = np.load(ospj(pt_data_path, "lead_sz_sz_id_band-{}_elec-{}.npy".format(bands, electrodes)))
-    W = np.load(ospj(pt_data_path, "nmf_expression_band-{}_elec-{}.npy".format(bands, electrodes)))
-    H = np.load(ospj(pt_data_path, "nmf_coefficients_band-{}_elec-{}.npy".format(bands, electrodes)))
+    W = np.load(ospj(pt_data_path, "nmf_expression_band-{}_elec-{}_sz-{}.npy".format(bands, electrodes, sz_num)))
+    H = np.load(ospj(pt_data_path, "nmf_components_band-{}_elec-{}_sz_{}.npy".format(bands, electrodes, sz_num)))
     n_components = H.shape[0]
 
-    
     # pull and format electrode metadata
     electrodes_mat = loadmat(ospj(pt_data_path, "selected_electrodes_elec-{}.mat".format(electrodes)))
     target_electrode_region_inds = electrodes_mat['targetElectrodesRegionInds'][0]
     pt_index = patients.index(pt)
     sz_starts = pull_sz_starts(pt, metadata)
 
-
     # find seizure onset zone and state with most seizure onset zone
     soz_electrodes = np.array(np.squeeze(soz[pt_index][target_electrode_region_inds, :]), dtype=bool)
-    pt_soz_state = soz_state(H, soz_electrodes)
+    pt_soz_state_resamp, pt_soz_state_u, pct_non_zero, var = soz_state(H, soz_electrodes)
     
-    patient_cohort.at[index, 'SOZ Sensitive State'] = pt_soz_state
+    seizure_metadata.at[index, 'SOZ Sensitive State (resampling)'] = pt_soz_state_resamp
+    seizure_metadata.at[index, 'SOZ Sensitive State (mann-whitney)'] = pt_soz_state_u
+    seizure_metadata.at[index, 'SOZ Sensitive State (mann-whitney)'] = pt_soz_state_u
+    seizure_metadata.at[index, 'Ratio of non-zero component entries'] = pct_non_zero
+    seizure_metadata.at[index, 'Maximum variance across bands'] = var
 
     np.save(ospj(pt_data_path, "soz_electrodes_band-{}_elec-{}.npy".format(bands, electrodes)), soz_electrodes)
-    np.save(ospj(pt_data_path, "pt_soz_state_band-{}_elec-{}.npy".format(bands, electrodes)), pt_soz_state)
 
-patient_cohort.to_excel(ospj(data_path, "patient_cohort_test.xlsx"))
+seizure_metadata.to_excel(ospj(data_path, "seizure_metadata_with_soz_subgraph.xlsx"))
 # %%

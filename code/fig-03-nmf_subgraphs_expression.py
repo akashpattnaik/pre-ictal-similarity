@@ -27,7 +27,7 @@ band_opt = config['bands']
 data_path = ospj(repo_path, 'data')
 figure_path = ospj(repo_path, 'figures')
 
-patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort_test.xlsx"))
+patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
 
 # %%
 # Plot the NMF subgraphs and expression
@@ -42,7 +42,7 @@ for index, row in patient_cohort.iterrows():
     t_sec = np.load(ospj(pt_data_path, "lead_sz_t_sec_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
     sz_id = np.load(ospj(pt_data_path, "lead_sz_sz_id_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
     W = np.load(ospj(pt_data_path, "nmf_expression_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
-    H = np.load(ospj(pt_data_path, "nmf_coefficients_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
+    H = np.load(ospj(pt_data_path, "nmf_components_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
 
     sz_id = np.squeeze(sz_id)
     n_components = H.shape[0]
@@ -52,24 +52,31 @@ for index, row in patient_cohort.iterrows():
         t_arr_min = (t_sec[sz_id == i] - t_sec[sz_id == i][-1]) / 60
 
         W_norm = normalize(W, norm='l1')
-        ax.plot(t_arr_min, movmean(W_norm[sz_id == i, 1:].T, k=100).T)
+        ax.plot(t_arr_min, movmean(W_norm[sz_id == i, :].T, k=100).T)
 
         ax.set_xlabel("Time from seizure onset (min)")
         ax.set_ylabel("Subgraph coefficient")
         ax.set_title("Seizure {}".format(i))
-        ax.legend(np.arange(n_components - 1) + 2, title="Component")
+        ax.legend(
+            np.arange(n_components), 
+            title="Component",
+            loc='lower left', 
+            bbox_to_anchor=(1.04, 0),
+            ncol=1, 
+            fancybox=True, 
+            shadow=True
+            )
 
         plt.savefig(ospj(pt_figure_path, "expression_band-{}_elec-{}_sz-{}.svg".format(band_opt, electrodes_opt, i)), bbox_inches='tight', transparent='true')
         plt.savefig(ospj(pt_figure_path, "expression_band-{}_elec-{}_sz-{}.png".format(band_opt, electrodes_opt, i)), bbox_inches='tight', transparent='true')
-        # plt.close()
+        plt.close()
 
-    # ax = plot_spectrogram(H, start_time=0, end_time=n_components)
-    # ax.set_title("{}".format(pt))
-    # ax.set_xlabel("Component")
+    ax = plot_spectrogram(H, start_time=0, end_time=n_components)
+    ax.set_title("{}".format(pt))
+    ax.set_xlabel("Component")
 
-    # plt.savefig(ospj(pt_figure_path, "subgraphs_band-{}_elec-{}_sz-{}.svg".format(band_opt, electrodes_opt, i)), bbox_inches='tight', transparent='true')
-    # plt.savefig(ospj(pt_figure_path, "subgraphs_band-{}_elec-{}_sz-{}.svg".format(band_opt, electrodes_opt, i)), bbox_inches='tight', transparent='true')
-    # plt.close()
-
+    plt.savefig(ospj(pt_figure_path, "subgraphs_band-{}_elec-{}.png".format(band_opt, electrodes_opt, i)), bbox_inches='tight', transparent='true')
+    plt.savefig(ospj(pt_figure_path, "subgraphs_band-{}_elec-{}.svg".format(band_opt, electrodes_opt, i)), bbox_inches='tight', transparent='true')
+    plt.close()
 
 # %%

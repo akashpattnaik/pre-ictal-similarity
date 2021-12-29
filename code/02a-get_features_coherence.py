@@ -20,9 +20,12 @@ from scipy.io import loadmat, savemat
 import pandas as pd
 import re
 from tqdm import tqdm
+from tqdm.auto import trange
 
-from scipy.signal import iirnotch, filtfilt, butter
+
+from scipy.signal import iirnotch, filtfilt, butter, coherence
 from os.path import join as ospj
+from bct import strengths_und
 
 import warnings
 warnings.filterwarnings(action='ignore', category=RuntimeWarning)
@@ -125,105 +128,56 @@ def _laplacian_reference(data):
         data[electrode] = data[electrode] - data.iloc[:, inds].mean(axis=1)
     return data
 
-
-def _laplacian_reference(data):
-    columns = data.columns
-
-    # separate contact names
-    electrodes = []
-    contacts = []
-    for i in columns:
-        m = re.match(r"(\D+)(\d+)", i)
-        electrodes.append(m.group(1))
-        contacts.append(int(m.group(2)))
-
-    # find channel before and after, if it's on the same electrode
-    indices_to_average = {}
-    for i in range(n_channels):
-        electrode = electrodes[i]
-        if i == 0:
-            electrode_post = electrodes[i + 1]
-            if electrode == electrode_post:
-                indices_to_average[columns[i]] = [i + 1]
-        elif i == n_channels - 1:
-            electrode_pre = electrodes[i - 1]
-            if electrode == electrode_pre:
-                indices_to_average[columns[i]] = [i - 1]
-        else:
-            electrode_pre = electrodes[i - 1]
-            electrode_post = electrodes[i + 1]
-            avg_li = []
-            if electrode == electrode_pre:
-                avg_li.append(i - 1)
-            if electrode == electrode_post:
-                avg_li.append(i + 1)
-            if len(avg_li) == 0:
-                avg_li.extend([i - 1, i + 1])
-            indices_to_average[columns[i]] = avg_li
-    # subtract mean of two nearby channels and return
-    for electrode, inds in indices_to_average.items():
-        data[electrode] = data[electrode] - data.iloc[:, inds].mean(axis=1)
-    return data
-
 def _common_average_reference(data):
     data = data.subtract(data.mean(axis=1), axis=0)
     return data
 
 # %%
-def _bandpower(data, sf, band, window_sec=None, relative=False):
-    """Adapted from https://raphaelvallat.com/bandpower.html
-    Compute the average power of the signal x in a specific frequency band.
+def _coherence(data_hat, fs, band, return_mode="node_strength"):
+    '''
+    Adapted from Andy Revell and Ankit Khambhati
 
+    Uses coherence to compute a band-specific functional network from ECoG
     Parameters
     ----------
-    data : 1d-array or 2d-array
-        Input signal in the time-domain. (time by channels)
-    sf : float
-        Sampling frequency of the data.
-    band : list
-        Lower and upper frequencies of the band of interest.
-    window_sec : float
-        Length of each window in seconds.
-        If None, window_sec = (1 / min(band)) * 2
-    relative : boolean
-        If True, return the relative power (= divided by the total power of the signal).
-        If False (default), return the absolute power.
+        data_hat: ndarray, shape (T, N)
+            Input signal with T samples over N variates
+        fs: int
+            Sampling frequency
+        band: list
+            Frequency range over which to compute coherence [-NW+C, C+NW]
 
-    Return
-    ------
-    bp : float
-        Absolute or relative band power.
-    """
-    from scipy.signal import welch
-    from scipy.integrate import simpson
-    band = np.asarray(band)
-    low, high = band
+    Returns
+    -------
+        Node_strength: ndarray, shape (N,)
+            node strength of each channel
+    '''
 
-    # Define window length
-    if window_sec is not None:
-        nperseg = window_sec * sf
-    else:
-        nperseg = (2 / low) * sf
+    data_hat = np.array(signal_ref.iloc[win_inds, :])
+    # Get data_hat attributes
+    n_samp, n_chan = data_hat.shape
 
-    # Compute the modified periodogram (Welch)
-    freqs, psd = welch(data.T, sf, nperseg=nperseg)
+    triu_ix, triu_iy = np.triu_indices(n_chan, k=1)
 
-    # Frequency resolution
-    freq_res = freqs[1] - freqs[0]
+    adj = np.zeros((n_chan, n_chan))
 
-    # Find closest indices of band in frequency vector
-    idx_band = np.logical_and(freqs >= low, freqs <= high)
+    for n1, n2 in zip(triu_ix, triu_iy):
+        out = coherence(x= data_hat[:, n1],
+                                y = data_hat[:, n2],
+                                fs = fs,
+                                window= range(int(fs-fs/3)) #if n_samp = fs, the window has to be less than fs, or else you will get output as all ones. So I modified to be fs - fs/3, and not just fs
+                                )
 
-    # Integral approximation of the spectrum using Simpson's rule.
-    if psd.ndim == 2:
-        bp = simpson(psd[:, idx_band], dx=freq_res)
-    elif psd.ndim == 1:
-        bp = simpson(psd[idx_band], dx=freq_res)
+        # Find closest frequency to the desired center frequency
+        cf_idx = np.flatnonzero((out[0] >= band[0]) &
+                                (out[0] <= band[1]))
 
-    if relative:
-        bp /= simpson(psd, dx=freq_res)
-    return bp
+        # Store coherence in association matrix
+        adj[n1, n2] = np.mean(out[1][cf_idx])
 
+    adj += adj.T
+    return strengths_und(adj)
+    
 # %%
 # Get credentials
 with open("../credentials.json") as f:
@@ -232,15 +186,17 @@ with open("../credentials.json") as f:
     password = credentials['password']
     
 # %%
-
-for index, row in patient_cohort.iterrows():
+pbar = tqdm(patient_cohort.iterrows(), total=len(patient_cohort))
+for index, row in pbar:
     if row['Ignore']:
         continue
 
     pt = row['Patient']
     iEEG_filename = row['portal_ID']
 
-    print("Calculating features for {}".format(pt))
+    pbar.set_description("Calculating features for {}".format(pt))
+
+    # tqdm.write("Calculating features for {}".format(pt))
     pt_data_path = ospj(data_path, pt)
 
     target_electrodes_vars = loadmat(ospj(pt_data_path, "selected_electrodes_elec-{}.mat".format(electrodes_opt)))
@@ -262,7 +218,7 @@ for index, row in patient_cohort.iterrows():
     all_signal = None
     t_sec_arr = []
     sz_id_arr = []
-    for sz_id, sz_start in enumerate(sz_starts):
+    for sz_id, sz_start in tqdm(enumerate(sz_starts), total=len(sz_starts), desc='seizure', leave=False):
         if period == "preictal":
             duration_usec = preictal_window_min * 60 * 1e6
             n_iter = int(np.floor(preictal_window_min / data_pull_min))
@@ -283,7 +239,7 @@ for index, row in patient_cohort.iterrows():
         else:
             sys.exit("invalid period given")
 
-        for i in tqdm(range(n_iter)):
+        for i in trange(n_iter, desc='window', leave=False):
             if period == "preictal":
                 start_usec = preictal_start_usec + i * data_duration_usec
             elif period == "ictal":
@@ -318,9 +274,10 @@ for index, row in patient_cohort.iterrows():
             signal_nan = data[nan_mask]
             t_sec_nan = t_sec[nan_mask]
 
+            # if artifact rejection finds that the entire data pull is artifact, skip this iteration
             if len(t_sec_nan) == 0:
                 continue
-
+            
             # remove 60Hz noise
             f0 = 60.0  # Frequency to be removed from signal (Hz)
             Q = 30.0  # Quality factor
@@ -342,7 +299,7 @@ for index, row in patient_cohort.iterrows():
             if all_signal is None:
                 all_signal = signal_ref
 
-            for name, band in zip(band_names, bands):
+            for name, band in tqdm(zip(band_names, bands), total=len(bands), desc='band', leave=False):
                 # indices for 1 second non-overlapping windows
                 win_size = 1 * fs
                 ind_overlap = np.reshape(np.arange(signal_ref.shape[0]), (-1, int(win_size)))
@@ -352,9 +309,10 @@ for index, row in patient_cohort.iterrows():
                 t_sec_bandpower = np.zeros((n_windows))
                 power_mat = np.zeros((n_windows, n_channels))
                 for ind, win_inds in enumerate(ind_overlap):
-                    power_mat[ind, :] = _bandpower(signal_ref.iloc[win_inds, :], fs, band, 1, relative=True)
+                    window_data = signal_ref.iloc[win_inds, :]
+                    power_mat[ind, :] = _coherence(window_data, fs, band)
                     t_sec_bandpower[ind] = t_sec_nan[win_inds[-1]]
-                
+
                 # append results to large arrays with all data pull
                 if band_powers[name] is None:
                     band_powers[name] = power_mat
@@ -372,4 +330,5 @@ for index, row in patient_cohort.iterrows():
     df = pd.DataFrame(all_band_powers, index=pd.to_timedelta(t_sec_arr, unit='S'), columns=col_names)         
     df['Seizure id'] = sz_id_arr
 
-    df.to_pickle(ospj(pt_data_path, "bandpower_elec-{}_period-{}.pkl".format(electrodes_opt, period)))
+    df.to_pickle(ospj(pt_data_path, "coherence_elec-{}_period-{}.pkl".format(electrodes_opt, period)))
+# %%

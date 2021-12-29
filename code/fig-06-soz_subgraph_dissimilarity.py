@@ -19,16 +19,17 @@ band_opt = config['bands']
 data_path = ospj(repo_path, 'data')
 figure_path = ospj(repo_path, 'figures')
 
-patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort_test.xlsx"))
+patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
 
 # %%
 for index, row in patient_cohort.iterrows():
     pt = row["Patient"]
 
+    print("Plotting soz_subgraph_dissimilarity for {}".format(pt))
     pt_data_path = ospj(data_path, pt)
     pt_figure_path = ospj(figure_path, pt)
 
-    soz_subgraph_dissim_mat = np.load(ospj(pt_data_path, "soz_subgraph_dissim_mat_{}_{}.npy".format(electrodes_opt, band_opt)))
+    soz_subgraph_dissim_mat = np.load(ospj(pt_data_path, "soz_subgraph_dissim_mat_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
     remaining_sz_ids = np.load(ospj(pt_data_path, "remaining_sz_ids.npy"))
 
     n_sz = np.size(remaining_sz_ids)
@@ -61,12 +62,12 @@ for index, row in patient_cohort.iterrows():
 
     if title:
         ax.set_title(title, color=palette['1'])
-    plt.savefig(ospj(pt_figure_path, "soz_subgraph_dissim_mat_{}_{}.svg".format(electrodes_opt, band_opt)), bbox_inches='tight', transparent='true')
-    plt.savefig(ospj(pt_figure_path, "soz_subgraph_dissim_mat_{}_{}.png".format(electrodes_opt, band_opt)), bbox_inches='tight', transparent='true')
+    plt.savefig(ospj(pt_figure_path, "soz_subgraph_dissim_mat_band-{}_elec-{}.svg".format(band_opt, electrodes_opt)), bbox_inches='tight', transparent='true')
+    plt.savefig(ospj(pt_figure_path, "soz_subgraph_dissim_mat_band-{}_elec-{}.svg".format(band_opt, electrodes_opt)), bbox_inches='tight', transparent='true')
     plt.close(fig)
 
 
-    sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat_dtw_{}_{}.npy".format(electrodes_opt, band_opt)))
+    sz_dissim_mat = np.load(ospj(pt_data_path, "sz_dissim_mat_dtw_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
 
     remaining_sz_dissim_mat = sz_dissim_mat[remaining_sz_ids[:, None] - 1, remaining_sz_ids - 1]
     title='Seizure Dissimilarity'
@@ -97,9 +98,8 @@ for index, row in patient_cohort.iterrows():
 
     if title:
         ax.set_title(title, color=palette['1'])
-    plt.savefig(ospj(pt_figure_path, "remaining_sz_dissim_mat_{}_{}.svg".format(electrodes_opt, band_opt)), bbox_inches='tight', transparent='true')
-    plt.savefig(ospj(pt_figure_path, "remaining_sz_dissim_mat_{}_{}.png".format(electrodes_opt, band_opt)), bbox_inches='tight', transparent='true')
+    plt.savefig(ospj(pt_figure_path, "remaining_sz_dissim_mat_band-{}_elec-{}.svg".format(band_opt, electrodes_opt)), bbox_inches='tight', transparent='true')
+    plt.savefig(ospj(pt_figure_path, "remaining_sz_dissim_mat_band-{}_elec-{}.png".format(band_opt, electrodes_opt)), bbox_inches='tight', transparent='true')
     plt.close(fig)
 
-    break
 # %%

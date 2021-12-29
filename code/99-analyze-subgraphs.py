@@ -113,7 +113,7 @@ for index, row in patient_cohort.iterrows():
 
     n_electrodes = np.size(target_electrode_region_inds)
     # # get bandpower in soz electrodes
-    H = np.load(ospj(pt_data_path, "nmf_coefficients.npy"))
+    H = np.load(ospj(pt_data_path, "nmf_components_band.npy"))
     n_components = H.shape[0]
 
     pt_soz_state = soz_state(H, soz_electrodes)

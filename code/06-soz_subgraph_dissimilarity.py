@@ -30,7 +30,7 @@ metadata_fname = ospj(metadata_path, "DATA_MASTER.json")
 with open(metadata_fname) as f:
     metadata = json.load(f)['PATIENTS']
 
-patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort.xlsx"))
+patient_cohort = pd.read_excel(ospj(data_path, "patient_cohort_with_soz_subgraph.xlsx"))
 
 # %%
 for index, row in patient_cohort.iterrows():
@@ -47,7 +47,8 @@ for index, row in patient_cohort.iterrows():
     sz_id = np.load(ospj(pt_data_path, "lead_sz_sz_id_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
     W = np.load(ospj(pt_data_path, "nmf_expression_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
     soz_electrodes = np.load(ospj(pt_data_path, "soz_electrodes_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
-    pt_soz_state = np.load(ospj(pt_data_path, "pt_soz_state_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)))
+    pt_soz_state = row['SOZ Sensitive State (resampling)']
+    pt_soz_state = row['SOZ Sensitive State (mann-whitney)']
 
     n_electrodes = soz_electrodes.shape[0] 
     n_remaining_sz = np.size(remaining_sz_ids)
@@ -58,9 +59,10 @@ for index, row in patient_cohort.iterrows():
 
     for ind_i, i in enumerate(remaining_sz_ids):
         for ind_j, j in enumerate(remaining_sz_ids):
-            if i != j:
+            if j > i:
                 dist, path = fastdtw(W_norm[sz_id == i, pt_soz_state], W_norm[sz_id == j, pt_soz_state], dist=euclidean)
                 soz_subgraph_dissim_mat[ind_i, ind_j] = dist
+    soz_subgraph_dissim_mat = soz_subgraph_dissim_mat + soz_subgraph_dissim_mat.T
     np.save(ospj(pt_data_path, "soz_subgraph_dissim_mat_band-{}_elec-{}.npy".format(band_opt, electrodes_opt)), soz_subgraph_dissim_mat)
 
 # %%
